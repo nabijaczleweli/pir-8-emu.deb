@@ -1,0 +1,7 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Name=pir-8-emu
+Exec=pir-8-emu
+Icon=pir-8-emu

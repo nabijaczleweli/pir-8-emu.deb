@@ -1,3 +1,10 @@
+pir-8-emu (0.1.1-2) unstable; urgency=medium
+
+  * .desktop file for pir-8-emu
+  * Extracted highest-res icon from the .ico
+
+ -- nabijaczleweli <nabijaczleweli@gmail.com>  Wed, 19 Feb 2020 19:11:52 +0100
+
 pir-8-emu (0.1.1-1) unstable; urgency=medium
 
   * Initial release, upstream version 0.1.1

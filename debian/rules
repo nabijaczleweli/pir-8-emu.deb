@@ -16,9 +16,10 @@ override_dh_auto_build:
 	RUSTFLAGS=-g $(CARGO) build --release
 
 override_dh_auto_install:
-	mkdir -p $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS),$(l)usr/bin $(l)usr/share/man/man1) $(OUTDIR_EMULATOR)usr/share/pixmaps/ $(OUTDIR_EMULATOR)usr/share/doc/pir-8-emu $(OUTDIR_BINUTILS)usr/share/doc/pir-8-emu-binutils $(OUTDIR_DEVEL)usr/share/doc/pir-8-emu-devel $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/ $(OUTDIR_DEVEL)usr $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS) $(OUTDIR_DEVEL),$(l)usr/share/pir-8-emu)
+	mkdir -p $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS),$(l)usr/bin $(l)usr/share/man/man1) $(OUTDIR_EMULATOR)usr/share/pixmaps $(OUTDIR_EMULATOR)usr/share/applications $(OUTDIR_EMULATOR)usr/share/doc/pir-8-emu $(OUTDIR_BINUTILS)usr/share/doc/pir-8-emu-binutils $(OUTDIR_DEVEL)usr/share/doc/pir-8-emu-devel $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/ $(OUTDIR_DEVEL)usr $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS) $(OUTDIR_DEVEL),$(l)usr/share/pir-8-emu)
 	@
-	cp assets/pir-8-emu.ico $(OUTDIR_EMULATOR)usr/share/pixmaps/
+	cp assets/pir-8-emu.ico debian/pir-8-emu.png $(OUTDIR_EMULATOR)usr/share/pixmaps/
+	cp debian/pir-8-emu.desktop $(OUTDIR_EMULATOR)usr/share/applications/
 	cp target/release/pir-8-emu $(OUTDIR_EMULATOR)usr/bin/
 	@
 	cp $(foreach l,as disasm,target/release/pir-8-$(l)) $(OUTDIR_BINUTILS)usr/bin/
