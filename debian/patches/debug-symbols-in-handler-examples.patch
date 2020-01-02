@@ -1,0 +1,13 @@
+diff --git a/configMakefile b/configMakefile
+index 4cb9eeb..5e4ac34 100644
+--- a/configMakefile
++++ b/configMakefile
+@@ -45,7 +45,7 @@ else
+ endif
+ 
+ OBJ := .o
+-CXXAR := -O3 -std=c++14 -pedantic -Wall -Wextra -pipe $(INCCXXAR) $(PIC)
++CXXAR := -g -Og -std=c++14 -pedantic -Wall -Wextra -pipe $(INCCXXAR) $(PIC)
+ 
+ OUTDIR := out/
+ BLDDIR := out/build/

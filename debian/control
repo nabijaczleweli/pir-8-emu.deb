@@ -1,0 +1,63 @@
+Source: pir-8-emu
+Section: devel
+Priority: optional
+Maintainer: nabijaczleweli <nabijaczleweli@gmail.com>
+Standards-Version: 4.5.0
+Rules-Requires-Root: no
+Vcs-Git: https://github.com/nabijaczleweli/pir-8-emu.deb.git
+Vcs-Browser: https://github.com/nabijaczleweli/pir-8-emu.deb
+Homepage: https://github.com/LoungeCPP/pir-8-emu
+Tag: implemented-in::rust, role::program
+Build-Depends: debhelper,
+               libx11-dev,
+               libbearlibterminal-dev,
+               patchelf,
+#              ronn,  too old, broken on my machine
+#              rustc?
+
+Package: pir-8-emu
+Architecture: linux-any
+Section: devel
+Priority: optional
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Implementation of the pir-8 ISA – emulator
+ The pir-8 ISA, available at, https://github.com/thecoshman/pir-8,
+ describes a custom computer architecture,
+ the hardware for which is to be assembled from raw transistors Soon™.
+ .
+ This package contains just the emulator,
+ you will need precompiled binaries to run,
+ or the pir-8-emu-binutils package, containing an assembler and disassembler;
+ additionally, pir-8-emu-devel contains development headers for building
+ emulated hardware components.
+
+Package: pir-8-emu-binutils
+Architecture: linux-any
+Section: devel
+Priority: optional
+Recommends: pir-8-emu (= ${binary:Version}),
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Implementation of the pir-8 ISA – assembler and disassembler
+ The pir-8 ISA, available at, https://github.com/thecoshman/pir-8,
+ describes a custom computer architecture,
+ the hardware for which is to be assembled from raw transistors Soon™.
+ .
+ This package contains the assembler and disassembler,
+ see the pir-8-emu package for the emulator.
+
+Package: pir-8-emu-devel
+Architecture: linux-any
+Section: devel
+Priority: optional
+Recommends: pir-8-emu (= ${binary:Version}),
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Implementation of the pir-8 ISA – hardware development headers
+ The pir-8 ISA, available at, https://github.com/thecoshman/pir-8,
+ describes a custom computer architecture,
+ the hardware for which is to be assembled from raw transistors Soon™.
+ .
+ This package contains headers for developing (emulated) hardware components,
+ for the emulator, residing in the pir-8-emu package.

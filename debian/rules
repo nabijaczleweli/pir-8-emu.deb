@@ -1,0 +1,47 @@
+#!/usr/bin/make -f
+
+
+CARGO ?= cargo
+RONN ?= ronn
+
+OUTDIR_EMULATOR = $(CURDIR)/debian/pir-8-emu/
+OUTDIR_BINUTILS = $(CURDIR)/debian/pir-8-emu-binutils/
+OUTDIR_DEVEL    = $(CURDIR)/debian/pir-8-emu-devel/
+TRIPLE = $(shell $(CC) -dumpmachine)
+
+
+override_dh_auto_build:
+	$(RONN) --organization="Lounge<C++>" $(wildcard man/*.md)	
+	$(MAKE)
+	RUSTFLAGS=-g $(CARGO) build --release
+
+override_dh_auto_install:
+	mkdir -p $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS),$(l)usr/bin $(l)usr/share/man/man1) $(OUTDIR_EMULATOR)usr/share/pixmaps/ $(OUTDIR_EMULATOR)usr/share/doc/pir-8-emu $(OUTDIR_BINUTILS)usr/share/doc/pir-8-emu-binutils $(OUTDIR_DEVEL)usr/share/doc/pir-8-emu-devel $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/ $(OUTDIR_DEVEL)usr $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS) $(OUTDIR_DEVEL),$(l)usr/share/pir-8-emu)
+	@
+	cp assets/pir-8-emu.ico $(OUTDIR_EMULATOR)usr/share/pixmaps/
+	cp target/release/pir-8-emu $(OUTDIR_EMULATOR)usr/bin/
+	@
+	cp $(foreach l,as disasm,target/release/pir-8-$(l)) $(OUTDIR_BINUTILS)usr/bin/
+	@
+	cp -r include/ $(OUTDIR_DEVEL)usr/
+	cp -r handler-examples/ $(OUTDIR_DEVEL)usr/share/pir-8-emu/
+	cp $(wildcard out/*.so) $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/
+	@
+	cat man/pir-8-emu.1    | gzip -9 > $(OUTDIR_EMULATOR)usr/share/man/man1/pir-8-emu.1.gz
+	cat man/pir-8-as.1     | gzip -9 > $(OUTDIR_BINUTILS)usr/share/man/man1/pir-8-as.1.gz
+	cat man/pir-8-disasm.1 | gzip -9 > $(OUTDIR_BINUTILS)usr/share/man/man1/pir-8-disasm.1.gz
+	cat debian/changelog.upstream | gzip -9 > $(OUTDIR_EMULATOR)usr/share/doc/pir-8-emu/changelog.gz
+	cp $(OUTDIR_EMULATOR)usr/share/doc/pir-8-emu/changelog.gz $(OUTDIR_BINUTILS)usr/share/doc/pir-8-emu-binutils/
+	cp $(OUTDIR_EMULATOR)usr/share/doc/pir-8-emu/changelog.gz $(OUTDIR_DEVEL)usr/share/doc/pir-8-emu-devel/
+	cp -r ext/pir-8/ $(OUTDIR_EMULATOR)usr/share/pir-8-emu/
+	cp -r test-data/ $(OUTDIR_BINUTILS)usr/share/pir-8-emu/examples
+
+override_dh_strip:
+	# These binaries do not use BLT, but cargo still links them against it; dpkg-shlibdeps adds libbearlibterminal to Depends: and complains:
+	# > dpkg-shlibdeps: warning: package could avoid a useless dependency if debian/pir-8-emu-binutils/usr/bin/pir-8-disasm debian/pir-8-emu-binutils/usr/bin/pir-8-as were not linked against libBearLibTerminal.so.0.15.7 (they use none of the library's symbols)
+	patchelf --remove-needed $(shell ldd $(OUTDIR_BINUTILS)usr/bin/pir-8-as     | awk '/BearLibTerminal/ {print $$1}') $(OUTDIR_BINUTILS)usr/bin/pir-8-as
+	patchelf --remove-needed $(shell ldd $(OUTDIR_BINUTILS)usr/bin/pir-8-disasm | awk '/BearLibTerminal/ {print $$1}') $(OUTDIR_BINUTILS)usr/bin/pir-8-disasm
+	dh_strip
+
+%:
+	dh $@
