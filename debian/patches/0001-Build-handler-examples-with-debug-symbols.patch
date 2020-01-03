@@ -1,3 +1,13 @@
+From: nabijaczleweli <nabijaczleweli@gmail.com>
+Date: Sat, 4 Jan 2020 07:24:20 +0100
+Subject: Build handler examples with debug symbols
+
+They get stripped later on anyway and it stops dh complaining that the
+*-dbgsym package doesn't have any symbols in it
+---
+ configMakefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
 diff --git a/configMakefile b/configMakefile
 index 4cb9eeb..5e4ac34 100644
 --- a/configMakefile
