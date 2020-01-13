@@ -11,12 +11,14 @@ TRIPLE = $(shell $(CC) -dumpmachine)
 
 
 override_dh_auto_build:
+	mkdir -p completions
 	$(RONN) --organization="Lounge<C++>" $(wildcard man/*.md)	
 	$(MAKE)
 	RUSTFLAGS=-g $(CARGO) build --release
+	cd completions && ../target/release/pir-8-build-completions
 
 override_dh_auto_install:
-	mkdir -p $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS),$(l)usr/bin) $(OUTDIR_EMULATOR)usr/share/pixmaps $(OUTDIR_EMULATOR)usr/share/applications $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/ $(OUTDIR_DEVEL)usr $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS) $(OUTDIR_DEVEL),$(l)usr/share/pir-8-emu)
+	mkdir -p $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS),$(l)usr/bin $(l)usr/share/zsh/vendor-functions $(l)usr/share/fish/vendor_completions.d) $(OUTDIR_EMULATOR)usr/share/pixmaps $(OUTDIR_EMULATOR)usr/share/applications $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/ $(OUTDIR_DEVEL)usr $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS) $(OUTDIR_DEVEL),$(l)usr/share/pir-8-emu)
 	@
 	cp assets/pir-8-emu.ico debian/pir-8-emu.png $(OUTDIR_EMULATOR)usr/share/pixmaps/
 	cp debian/pir-8-emu.desktop $(OUTDIR_EMULATOR)usr/share/applications/
@@ -30,6 +32,14 @@ override_dh_auto_install:
 	cp -r ext/pir-8/        $(OUTDIR_EMULATOR)usr/share/pir-8-emu/
 	cp -r test-data/        $(OUTDIR_BINUTILS)usr/share/pir-8-emu/examples
 	cp -r handler-examples/ $(OUTDIR_DEVEL)usr/share/pir-8-emu/
+	@
+	dh_bash-completion
+	# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=921236#17
+	cp completions/_pir-8-emu                         $(OUTDIR_EMULATOR)usr/share/zsh/vendor-functions/
+	cp $(foreach l,as disasm,completions/_pir-8-$(l)) $(OUTDIR_BINUTILS)usr/share/zsh/vendor-functions/
+	# # https://fishshell.com/docs/current/#where-to-put-completions
+	cp completions/pir-8-emu.fish                         $(OUTDIR_EMULATOR)usr/share/fish/vendor_completions.d/
+	cp $(foreach l,as disasm,completions/pir-8-$(l).fish) $(OUTDIR_BINUTILS)usr/share/fish/vendor_completions.d/
 
 override_dh_installchangelogs:
 	dh_installchangelogs debian/changelog.upstream

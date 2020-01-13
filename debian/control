@@ -9,6 +9,7 @@ Vcs-Browser: https://github.com/nabijaczleweli/pir-8-emu.deb
 Homepage: https://github.com/LoungeCPP/pir-8-emu
 Tag: implemented-in::rust, role::program
 Build-Depends: debhelper,
+               bash-completion,
                libx11-dev,
                libbearlibterminal-dev,
                patchelf,
