@@ -1,0 +1,120 @@
+From: nabijaczleweli <nabijaczleweli@gmail.com>
+Date: Sun, 23 Feb 2020 22:06:54 +0100
+Subject: Add binary for generating shell completion files
+
+---
+ src/bin/pir-8-build-completions.rs | 18 +++++++++++++++++
+ src/options.rs                     | 40 +++++++++++++++++++++++++-------------
+ 2 files changed, 44 insertions(+), 14 deletions(-)
+ create mode 100644 src/bin/pir-8-build-completions.rs
+
+diff --git a/src/bin/pir-8-build-completions.rs b/src/bin/pir-8-build-completions.rs
+new file mode 100644
+index 0000000..cf3b7f3
+--- /dev/null
++++ b/src/bin/pir-8-build-completions.rs
+@@ -0,0 +1,18 @@
++extern crate pir_8_emu;
++extern crate clap;
++
++use clap::Shell;
++
++
++fn main() {
++    complete(pir_8_emu::options::AssemblerOptions::app());
++    complete(pir_8_emu::options::DisassemblerOptions::app());
++    complete(pir_8_emu::options::EmulatorOptions::app(Some("~/.pir-8-emu")));
++}
++
++fn complete(mut app: clap::App) {
++    for &shell in &[Shell::Bash, Shell::Zsh, Shell::Fish] {
++        let name = app.get_name().to_string();
++        app.gen_completions(name, shell, ".");
++    }
++}
+diff --git a/src/options.rs b/src/options.rs
+index 994609c..bc1d796 100644
+--- a/src/options.rs
++++ b/src/options.rs
+@@ -79,9 +79,8 @@ pub struct EmulatorOptions {
+ 
+ 
+ impl AssemblerOptions {
+-    /// Parse `env`-wide command-line arguments into an `AssemblerOptions` instance
+-    pub fn parse() -> AssemblerOptions {
+-        let matches = App::new("pir-8-as")
++    pub fn app() -> App<'static, 'static> {
++        App::new("pir-8-as")
+             .version(crate_version!())
+             .author(crate_authors!())
+             .about("Assembler for the pir-8")
+@@ -96,6 +95,11 @@ impl AssemblerOptions {
+                         } else {
+                             filesystem_validator("Assembly file", false, &s)
+                         })])
++    }
++
++    /// Parse `env`-wide command-line arguments into an `AssemblerOptions` instance
++    pub fn parse() -> AssemblerOptions {
++        let matches = AssemblerOptions::app()
+             .get_matches();
+ 
+         AssemblerOptions {
+@@ -118,9 +122,8 @@ impl AssemblerOptions {
+ }
+ 
+ impl DisassemblerOptions {
+-    /// Parse `env`-wide command-line arguments into an `DisassemblerOptions` instance
+-    pub fn parse() -> DisassemblerOptions {
+-        let matches = App::new("pir-8-disasm")
++    pub fn app() -> App<'static, 'static> {
++        App::new("pir-8-disasm")
+             .version(crate_version!())
+             .author(crate_authors!())
+             .about("Disassembler for the pir-8")
+@@ -140,6 +143,11 @@ impl DisassemblerOptions {
+                     } else {
+                         filesystem_validator("Binary file", false, &s)
+                     })])
++    }
++
++    /// Parse `env`-wide command-line arguments into an `DisassemblerOptions` instance
++    pub fn parse() -> DisassemblerOptions {
++        let matches = DisassemblerOptions::app()
+             .get_matches();
+ 
+         DisassemblerOptions {
+@@ -155,14 +163,8 @@ impl DisassemblerOptions {
+ }
+ 
+ impl EmulatorOptions {
+-    /// Parse `env`-wide command-line arguments into an `EmulatorOptions` instance
+-    pub fn parse() -> EmulatorOptions {
+-        let config_dir_default = dirs::home_dir().map(|mut hd| {
+-            hd.push(".pir-8-emu");
+-            hd.display().to_string()
+-        });
+-
+-        let matches = App::new("pir-8-emu")
++    pub fn app(config_dir_default: Option<&str>) -> App {
++        App::new("pir-8-emu")
+             .version(crate_version!())
+             .author(crate_authors!())
+             .about("Emulator of the pir-8")
+@@ -176,6 +178,16 @@ impl EmulatorOptions {
+                             }
+                         }
+                         .validator(config_dir_validator)])
++    }
++
++    /// Parse `env`-wide command-line arguments into an `EmulatorOptions` instance
++    pub fn parse() -> EmulatorOptions {
++        let config_dir_default = dirs::home_dir().map(|mut hd| {
++            hd.push(".pir-8-emu");
++            hd.display().to_string()
++        });
++
++        let matches = EmulatorOptions::app(config_dir_default.as_ref().map(String::as_str))
+             .get_matches();
+ 
+         EmulatorOptions { config_dir: config_dir_process(matches.value_of("CONFIG_DIR").unwrap()) }
