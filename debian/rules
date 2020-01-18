@@ -7,6 +7,7 @@ RONN ?= ronn
 OUTDIR_EMULATOR = $(CURDIR)/debian/pir-8-emu/
 OUTDIR_BINUTILS = $(CURDIR)/debian/pir-8-emu-binutils/
 OUTDIR_DEVEL    = $(CURDIR)/debian/pir-8-emu-devel/
+OUTDIR_ISA      = $(CURDIR)/debian/pir-8-emu-isa/
 
 # https://wiki.debian.org/Multiarch/Tuples#Supporting_interfaces
 TRIPLE = $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
@@ -20,7 +21,7 @@ override_dh_auto_build:
 	cd completions && ../target/release/pir-8-build-completions
 
 override_dh_auto_install:
-	mkdir -p $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS),$(l)usr/bin $(l)usr/share/zsh/vendor-functions $(l)usr/share/fish/vendor_completions.d) $(OUTDIR_EMULATOR)usr/share/pixmaps $(OUTDIR_EMULATOR)usr/share/applications $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/ $(OUTDIR_DEVEL)usr $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS) $(OUTDIR_DEVEL),$(l)usr/share/pir-8-emu)
+	mkdir -p $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS),$(l)usr/bin $(l)usr/share/zsh/vendor-functions $(l)usr/share/fish/vendor_completions.d) $(OUTDIR_EMULATOR)usr/share/pixmaps $(OUTDIR_EMULATOR)usr/share/applications $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/ $(OUTDIR_DEVEL)usr $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS) $(OUTDIR_DEVEL) $(OUTDIR_ISA),$(l)usr/share/pir-8-emu)
 	@
 	cp assets/pir-8-emu.ico debian/pir-8-emu.png $(OUTDIR_EMULATOR)usr/share/pixmaps/
 	cp debian/pir-8-emu.desktop $(OUTDIR_EMULATOR)usr/share/applications/
@@ -31,9 +32,9 @@ override_dh_auto_install:
 	cp -r include/          $(OUTDIR_DEVEL)usr/
 	cp $(wildcard out/*.so) $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/
 	@
-	cp -r ext/pir-8/        $(OUTDIR_EMULATOR)usr/share/pir-8-emu/
 	cp -r test-data/        $(OUTDIR_BINUTILS)usr/share/pir-8-emu/examples
 	cp -r handler-examples/ $(OUTDIR_DEVEL)usr/share/pir-8-emu/
+	cp -r ext/pir-8/        $(OUTDIR_ISA)usr/share/pir-8-emu/
 	@
 	dh_bash-completion
 	# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=921236#17
@@ -43,8 +44,10 @@ override_dh_auto_install:
 	cp completions/pir-8-emu.fish                         $(OUTDIR_EMULATOR)usr/share/fish/vendor_completions.d/
 	cp $(foreach l,as disasm,completions/pir-8-$(l).fish) $(OUTDIR_BINUTILS)usr/share/fish/vendor_completions.d/
 
+# changelog.pir-8: git log --no-decorate --no-show-signature
 override_dh_installchangelogs:
-	dh_installchangelogs debian/changelog.upstream
+	dh_installchangelogs -Npir-8-emu-isa debian/changelog.pir-8-emu
+	dh_installchangelogs -ppir-8-emu-isa debian/changelog.pir-8
 
 override_dh_strip:
 	# These binaries do not use BLT, but cargo still links them against it; dpkg-shlibdeps adds libbearlibterminal to Depends: and complains:

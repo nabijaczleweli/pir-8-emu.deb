@@ -20,7 +20,8 @@ Package: pir-8-emu
 Architecture: linux-any
 Section: devel
 Priority: optional
-Depends: ${misc:Depends},
+Depends: pir-8-emu-isa (= ${source:Version}),
+         ${misc:Depends},
          ${shlibs:Depends},
 Description: Implementation of the pir-8 ISA – emulator
  The pir-8 ISA, available at, https://github.com/thecoshman/pir-8,
@@ -38,7 +39,8 @@ Architecture: linux-any
 Section: devel
 Priority: optional
 Recommends: pir-8-emu (= ${binary:Version}),
-Depends: ${misc:Depends},
+Depends: pir-8-emu-isa (= ${source:Version}),
+         ${misc:Depends},
          ${shlibs:Depends},
 Description: Implementation of the pir-8 ISA – assembler and disassembler
  The pir-8 ISA, available at, https://github.com/thecoshman/pir-8,
@@ -47,6 +49,23 @@ Description: Implementation of the pir-8 ISA – assembler and disassembler
  .
  This package contains the assembler and disassembler,
  see the pir-8-emu package for the emulator.
+
+Package: pir-8-emu-isa
+Architecture: all
+Section: devel
+Priority: optional
+Suggests: pir-8-emu-binutils (= ${source:Version})
+Depends: ${misc:Depends},
+# https://www.debian.org/doc/debian-policy/ch-relationships.html#s-replaces
+Replaces: pir-8-emu (<< 0.1.1-6)
+Breaks: pir-8-emu (<< 0.1.1-6)
+Description: Implementation of the pir-8 ISA – Instruction Set Architecture
+ The pir-8 ISA, available at, https://github.com/thecoshman/pir-8,
+ describes a custom computer architecture,
+ the hardware for which is to be assembled from raw transistors Soon™.
+ .
+ This package contains the ISA targeted by pir-8-emu and pir-8-emu-binutils
+ version ${source:Version}.
 
 Package: pir-8-emu-devel
 Architecture: linux-any

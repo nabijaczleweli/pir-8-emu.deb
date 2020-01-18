@@ -1,0 +1,119 @@
+commit 02c807010162df431a2b948585a0a3f77cfba6d0
+Author: thecoshman <github@thecoshman.com>
+Date:   Tue Jul 23 15:36:48 2019 +0100
+
+    Specify initial register values and stack behaviour
+
+commit 536218f0e7515bd84711de8dc75b2b0b261ea3c2
+Author: thecoshman <github@thecoshman.com>
+Date:   Tue Jul 23 10:25:31 2019 +0100
+
+    Fix typo and use proper 16bit values
+    
+    When describing how the PC wraps around as it increments past the end, now use 16bit values, as it's a 16bit register
+
+commit 3b61392fa4d7eb899b18b9810d6da301463f5e29
+Author: thecoshman <github@thecoshman.com>
+Date:   Mon Jul 22 23:01:05 2019 +0100
+
+    Clarify under/overflow behaviour with PC and SP registers
+
+commit 7a1f31f5138124bbb8a60a045bf20e7a8bd21a2f
+Author: thecoshman <github@thecoshman.com>
+Date:   Mon Jul 22 20:21:28 2019 +0100
+
+    Update the status of project
+    
+    Add links to other projects and fix (the many) typos.
+
+commit 54e4fa3dfcae64d7aca9890cbbab4aed886528d5
+Author: thecoshman <github@thecoshman.com>
+Date:   Mon Jul 15 10:31:41 2019 +0100
+
+    Minor clarifications and cleanup to ISA.md
+    
+    Fixed description for Arithmetic Shift and cleaned up a few typos here and there.
+
+commit 17f2d1c476cf80dc7b5416c27a1d6606e7027de8
+Author: nabijaczleweli <nabijaczleweli@gmail.com>
+Date:   Fri Jul 12 17:41:26 2019 +0200
+
+    Implement PORT
+
+commit cd6b34cd69a9995ce36c8fe8ab3683a7e728f1be
+Author: nabijaczleweli <nabijaczleweli@gmail.com>
+Date:   Fri Jul 12 16:47:34 2019 +0200
+
+    Fix JMPG desc
+
+commit 4b4618adac961020598f1cd501dc0dd4db3881d3
+Author: nabijaczleweli <nabijaczleweli@gmail.com>
+Date:   Fri Jul 12 16:16:11 2019 +0200
+
+    Fix J110
+
+commit a9ad3fddb7e7022a9dc110ae799939b04f245c33
+Author: nabijaczleweli <nabijaczleweli@gmail.com>
+Date:   Thu Jul 11 20:53:10 2019 +0200
+
+    Fix typos
+
+commit 66074e0b0f1e7890e762920b05127a4a7bbc5d7a
+Author: thecoshman <github@thecoshman.com>
+Date:   Sun Mar 18 01:08:49 2018 +0000
+
+    Updated formating, clarified some details, fixed some typos
+
+commit 6d7e4f185704e7eecd22b1d8b2235b762d6bf65f
+Author: thecoshman <github@thecoshman.com>
+Date:   Sat Feb 24 14:02:50 2018 +0000
+
+    Update description of shift/rotate instructions
+
+commit 029f8b0faf8b441a3af20fadf8f7c689c377d221
+Author: thecoshman <github@thecoshman.com>
+Date:   Fri Feb 23 19:53:45 2018 +0000
+
+    Update ISA.md
+
+commit 84a0e700b624f6c14f6d4ebd02285372ccf3d6f6
+Author: thecoshman <github@thecoshman.com>
+Date:   Thu Feb 22 23:22:01 2018 +0000
+
+    Update ISA.md
+
+commit 16d9de3fc8f22e71657cce458001d54274d04a0a
+Author: thecoshman <github@thecoshman.com>
+Date:   Thu Feb 22 21:18:35 2018 +0000
+
+    Update README.md
+
+commit 7fcf8097fa8f8d2dd6d7396288f6a61d10ce5fce
+Author: thecoshman <github@thecoshman.com>
+Date:   Thu Feb 22 14:36:47 2018 +0000
+
+    Update 'Stack Manipulation' to make it big-endian
+
+commit 3b85fdd905e1711870f9de05c12a317a16f2b8a5
+Author: thecoshman <github@thecoshman.com>
+Date:   Thu Feb 22 14:29:26 2018 +0000
+
+    Add the 'equals' flag the to flag register
+
+commit 19886cfa23e7f0c0d7879f0df92f382f6809a5d4
+Author: thecoshman <github@thecoshman.com>
+Date:   Thu Feb 22 13:53:04 2018 +0000
+
+    Create ISA.md
+
+commit d43e853682678a213d0f155deec996aaced58be0
+Author: thecoshman <github@thecoshman.com>
+Date:   Thu Feb 22 13:47:44 2018 +0000
+
+    Update README.md
+
+commit 5427ef9e77806f620d0a7987b8a156054e841729
+Author: thecoshman <github@thecoshman.com>
+Date:   Thu Feb 22 13:35:06 2018 +0000
+
+    Initial commit
