@@ -1,3 +1,10 @@
+pir-8-emu (0.1.1-6) unstable; urgency=medium
+
+  * Move ISA to p8e-isa package, depended on by p8e and p8e-binutils
+  * Add pir-8 changelog
+
+ -- nabijaczleweli <nabijaczleweli@gmail.com>  Tue, 25 Feb 2020 16:18:39 +0100
+
 pir-8-emu (0.1.1-5) unstable; urgency=medium
 
   * Fix host triple detection
