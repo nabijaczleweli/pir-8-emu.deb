@@ -44,7 +44,8 @@ override_dh_auto_install:
 	cp completions/pir-8-emu.fish                         $(OUTDIR_EMULATOR)usr/share/fish/vendor_completions.d/
 	cp $(foreach l,as disasm,completions/pir-8-$(l).fish) $(OUTDIR_BINUTILS)usr/share/fish/vendor_completions.d/
 
-# changelog.pir-8: git log --no-decorate --no-show-signature
+# changelog.pir-8:     git log --no-decorate --no-show-signature
+# changelog.pir-8-emu: for tag in $(git tag -l | tac); do git tag -ln1000 "$tag"; echo; echo; done | awk '!/[[:space:]]+\([[:alnum:]]{40}\)$/' | sed -re 's;\([[:alnum:]]{40}\);+;g' -e 's;\(#;(https://github.com/LoungeCPP/pir-8-emu/issues/;g' -e 's;\(@;(https://github.com/;g' | head -c -2
 override_dh_installchangelogs:
 	dh_installchangelogs -Npir-8-emu-isa debian/changelog.pir-8-emu
 	dh_installchangelogs -ppir-8-emu-isa debian/changelog.pir-8

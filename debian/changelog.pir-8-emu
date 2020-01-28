@@ -1,3 +1,25 @@
+v1.0.0          Soulless
+    
+    BREAKING:
+      * New target ISA version – 5f282f5e86cfc4add8818a201092c0e75be1c4cd,
+        consult test-data/v0.1/README.md for the notable changes
+      * APIs broken, amongst a bunch more:
+        + Renamed: InstructionStckRegisterPair -> InstructionRegisterPair
+        + New:     Instruction::Madr
+        + New:     Instruction::MicroOp::Adr{Write,Read}
+        + New:     AluOperation::{Add,Sub}C
+        + Removed: AluOperation::Reserved
+        + Changed: :label load[-offset] now takes FRAGMENT (full|high|low)
+    
+    New:
+      * Crate version badge in README
+      * test-data/copy-any-length-literal-to-port assembly and binary
+    
+    Changed:
+      * Old test-data/ now lives in test-data/v0.1/,
+        with a fresh README to boot
+
+
 v0.1.1          Subcutaneous
     
     Fixed:

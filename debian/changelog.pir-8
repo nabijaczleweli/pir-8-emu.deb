@@ -1,3 +1,39 @@
+commit 5f282f5e86cfc4add8818a201092c0e75be1c4cd
+Author: thecoshman <github@thecoshman.com>
+Date:   Wed Feb 26 14:16:26 2020 +0000
+
+    Fix endianess of MADR
+    
+    Also remove needless description from stack instruction
+
+commit 77d345894b9bfeda1ce70b8e64468ec638436eda
+Author: thecoshman <github@thecoshman.com>
+Date:   Tue Feb 25 23:35:12 2020 +0000
+
+    Clarifiy some details
+
+commit 1b8869ef738031e6ec284d5cce8334a626a56e74
+Author: thecoshman <github@thecoshman.com>
+Date:   Tue Feb 25 14:21:28 2020 +0000
+
+    Update ALU instrctions
+    
+    Add ADD/SUB with carry and change the code for NOT
+
+commit 9fb8394135fc6ad2b95283c3019757fc6fdee696
+Author: thecoshman <github@thecoshman.com>
+Date:   Mon Feb 24 16:47:10 2020 +0000
+
+    Added new MADR instruction
+    
+    Fixed some spelling mistakes and updated relevant instructions to explain how the ADR register is now used.
+
+commit 5eefdc763b7927ed30baab502fe7098268728292
+Author: thecoshman <github@thecoshman.com>
+Date:   Wed Jul 24 13:16:48 2019 +0100
+
+    Specifiy explicately which ALU operations are unary
+
 commit 02c807010162df431a2b948585a0a3f77cfba6d0
 Author: thecoshman <github@thecoshman.com>
 Date:   Tue Jul 23 15:36:48 2019 +0100
