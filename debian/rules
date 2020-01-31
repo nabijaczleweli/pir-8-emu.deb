@@ -21,7 +21,7 @@ override_dh_auto_build:
 	cd completions && ../target/release/pir-8-build-completions
 
 override_dh_auto_install:
-	mkdir -p $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS),$(l)usr/bin $(l)usr/share/zsh/vendor-functions $(l)usr/share/fish/vendor_completions.d) $(OUTDIR_EMULATOR)usr/share/pixmaps $(OUTDIR_EMULATOR)usr/share/applications $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/ $(OUTDIR_DEVEL)usr $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS) $(OUTDIR_DEVEL) $(OUTDIR_ISA),$(l)usr/share/pir-8-emu)
+	mkdir -p $(foreach l,$(OUTDIR_EMULATOR) $(OUTDIR_BINUTILS),$(l)usr/bin $(l)usr/share/zsh/vendor-functions $(l)usr/share/fish/vendor_completions.d) $(OUTDIR_EMULATOR)usr/share/pixmaps $(OUTDIR_EMULATOR)usr/share/applications $(OUTDIR_DEVEL)usr/lib/$(TRIPLE)/pir-8-emu/handler-examples/ $(OUTDIR_DEVEL)usr $(foreach l,$(OUTDIR_BINUTILS) $(OUTDIR_DEVEL) $(OUTDIR_ISA),$(l)usr/share/pir-8-emu)
 	@
 	cp assets/pir-8-emu.ico debian/pir-8-emu.png $(OUTDIR_EMULATOR)usr/share/pixmaps/
 	cp debian/pir-8-emu.desktop $(OUTDIR_EMULATOR)usr/share/applications/
@@ -35,6 +35,7 @@ override_dh_auto_install:
 	cp -r test-data/        $(OUTDIR_BINUTILS)usr/share/pir-8-emu/examples
 	cp -r handler-examples/ $(OUTDIR_DEVEL)usr/share/pir-8-emu/
 	cp -r ext/pir-8/        $(OUTDIR_ISA)usr/share/pir-8-emu/
+	rm                      $(OUTDIR_ISA)usr/share/pir-8-emu/pir-8/LICENSE
 	@
 	dh_bash-completion
 	# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=921236#17

@@ -1,0 +1,8 @@
+# The the tarball download from GitHub doesn't include the submodules,
+#   git clone --recurse-submodules -b $latest_tag https://github.com/LoungeCPP/pir-8-emu.git pir-8-emu-$tag_without_v
+#     && rm -rf pir-8-emu-$tag_without_v/{,pir-8/}.git
+# and import that, then update changelogs as specified in debian/rules
+
+version=4
+# opts=filenamemangle=s/.+\/v?(\d\S+)\.tar\.gz/pir-8-emu-$1\.tar\.gz/ \
+#   https://github.com/LoungeCPP/pir-8-emu/releases .*/v?(\d\S+)\.tar\.gz

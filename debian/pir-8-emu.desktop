@@ -5,3 +5,4 @@ Terminal=false
 Name=pir-8-emu
 Exec=pir-8-emu
 Icon=pir-8-emu
+Keywords=emulator;

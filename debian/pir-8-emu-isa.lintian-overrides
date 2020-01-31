@@ -1,0 +1,2 @@
+# The "documentation" is actually the ISA and it's the thing we're installing
+pir-8-emu-isa: package-contains-documentation-outside-usr-share-doc usr/share/pir-8-emu/pir-8/*

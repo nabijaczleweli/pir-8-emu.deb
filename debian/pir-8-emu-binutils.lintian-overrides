@@ -1,0 +1,2 @@
+# These README.mds do actually describe the directories and files within them
+pir-8-emu-binutils: package-contains-documentation-outside-usr-share-doc usr/share/pir-8-emu/examples/*/README.md
