@@ -1,3 +1,16 @@
+pir-8-emu (1.0.0-2) unstable; urgency=medium
+
+  * Fix Architecture from linux-any to any
+  * Add emulator keyword to .desktop file
+  * Fix typo in pir-8-as manpage
+  * Fix most evil-mode lintian warnings, notably:
+    + extra-license-file, by not installing LICENSE from ext/pir-8/;
+    + package-uses-old-debhelper-compat-version, by bumping debhelper compat
+      level to 12;
+    + debian-watch-file-is-missing, by adding an explanatory one;
+
+ -- nabijaczleweli <nabijaczleweli@gmail.com>  Thu, 27 Feb 2020 23:27:36 +0100
+
 pir-8-emu (1.0.0-1) unstable; urgency=medium
 
   * New upstream version 1.0.0
