@@ -1,0 +1,59 @@
+version: 0.1.0-{build}
+
+skip_tags: false
+
+platform: x64
+configuration: Release
+
+clone_folder: C:\pir-8-emu
+
+install:
+  - curl -SL https://api.github.com/repos/nabijaczleweli/BearLibTerminal.rs/releases/latest | grep _url | grep BearLibTerminal.dll | sed "s/ /\n/g" | grep . | tail -1 | sed s/\x22//g > TEMP
+  - set/p BLT_LINK=<TEMP
+  - curl -L %BLT_LINK% -oC:\BearLibTerminal.dll
+  -
+  - set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%;C:\Users\appveyor\.cargo\bin
+  - set LIBRARY_PATH=C:\
+  -
+  - bash -lc "pacman --needed --noconfirm -Sy pacman-mirrors"
+  - bash -lc "pacman --noconfirm -Sy"
+  - bash -lc "pacman --noconfirm -S mingw-w64-x86_64-toolchain zip"
+  -
+  # Fix undefined references to __acrt_iob_func()
+  - sed -rie "s/#define std([[:alpha:]]+)[[:space:]]+\(__acrt_iob_func\(([[:digit:]]+)\)\)/#define std\1 (\&__iob_func()[\2])/" "C:\msys64\mingw64\x86_64-w64-mingw32\include\stdio.h"
+  -
+  - curl -SL https://win.rustup.rs/ -oC:\rustup-init.exe
+  - C:\rustup-init.exe -y --default-host="x86_64-pc-windows-gnu"
+
+build: off
+build_script:
+  - make
+  - cargo build --verbose --release
+  -
+  - mkdir pir-8-emu-v0.1.0
+  - cp target\release\pir-8-as.exe pir-8-emu-v0.1.0\pir-8-as-v0.1.0.exe
+  - cp target\release\pir-8-disasm.exe pir-8-emu-v0.1.0\pir-8-disasm-v0.1.0.exe
+  - cp target\release\pir-8-emu.exe pir-8-emu-v0.1.0\pir-8-emu-v0.1.0.exe
+  - zip -9r pir-8-emu-v0.1.0.zip pir-8-emu-v0.1.0
+
+test: off
+test_script:
+  # The tests would finish successfully but AppVeyor would report a failure
+  - cargo test --verbose --release || true
+
+artifacts:
+  - path: pir-8-emu-v0.1.0.zip
+
+deploy:
+  provider: GitHub
+  artifact: /.*\.zip/
+  auth_token:
+    secure: 9T2phicbTZgfqYkyrP8gVdmtm/1JciPaR3X3diSLfpQTb70lLjX61QKfGjAxfOxI
+  on:
+    appveyor_repo_tag: true
+
+notifications:
+  - provider: Email
+    to:
+      - nabijaczleweli@gmail.com
+    on_build_status_changed: true
