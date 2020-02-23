@@ -1,3 +1,9 @@
+pir-8-emu (0.1.1-5) unstable; urgency=medium
+
+  * Fix host triple detection
+
+ -- nabijaczleweli <nabijaczleweli@gmail.com>  Mon, 24 Feb 2020 00:30:43 +0100
+
 pir-8-emu (0.1.1-4) unstable; urgency=medium
 
   * Patch in simple binary for extracting shell completion files
