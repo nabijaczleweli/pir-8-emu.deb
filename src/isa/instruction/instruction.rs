@@ -11,7 +11,7 @@ use std::convert::{TryFrom, From};
 /// An instruction is a single byte, and can include some following immediate values purely for data.
 ///
 ///
-/// It is possible that the PC will overflow and wrap arround as you load an instruction,
+/// It is possible that the PC will overflow and wrap around as you load an instruction,
 /// there is no hardware level protection or detection if this happens.
 ///
 /// An example of how this can happen is if you perform a jump to `0xFFFF`,
@@ -30,14 +30,14 @@ use std::convert::{TryFrom, From};
 ///
 /// Bit Mask  | Name | Count | Description
 /// ----------|------|-------|------------
-/// 0000 XXXX |      |    16 | Reserved
+/// 0000 0XXX |      |     8 | Reserved
+/// 0000 10XX |      |     4 | Reserved
+/// 0000 11XX | MADR |     4 | Move a value to/from the ADR register, see section below
 /// 0001 0XXX | JUMP |     8 | Jump, see section below
 /// 0001 1AAA | LOAD |     8 | Load the the next byte into register `AAA`
 ///                       |||| (PC will be incremented a second time)
-/// 0010 0AAA | LOAD |     8 | Load value in address indicated by the next two bytes into register `AAA`
-///                       |||| (PC will be incremented two more times)
-/// 0010 1AAA | SAVE |     8 | Store value in register `AAA` in address indicated by the next two bytes
-///                       |||| (PC will be incremented two more times)
+/// 0010 0AAA | LOAD |     8 | Load value in address indicated by `ADR` into register `AAA`
+/// 0010 1AAA | SAVE |     8 | Store value in register `AAA` in address indicated by `ADR`
 /// 0011 XXXX | ALU  |    16 | ALU based operations, see section below
 /// 01AA ABBB | MOVE |    64 | Move a value from register `AAA` to register `BBB`
 /// 10XX XXXX |      |    64 | Reserved
@@ -80,12 +80,8 @@ use std::convert::{TryFrom, From};
 ///
 /// The registers A and B are paired, as are the registers C and D.
 ///
-/// Effectively, the stack works on 16 bit values, but due to the 8 bit data bus it requires two transfers,
+/// Effectively, the stack works on 16-bit values, but due to the 8-bit data bus it requires two transfers,
 /// though this is handled via the hardware/microcode.
-///
-/// Although still two distinct bytes, the B and D registers should be considered the more significant byte whilst A and C
-/// registers the lesser; the more significant byte will be stored at the lower address in the stack,
-/// the pair of registers are big-endian.
 ///
 ///
 /// The Stack manipulation operations are of pattern `1111 10DR`.
@@ -97,25 +93,27 @@ use std::convert::{TryFrom, From};
 ///
 /// When PUSHing B/D will go to the address one less than the current SP, whilst A/C will go to address two less than the SP.
 ///
-/// After PUSHing, the SP will have been decremented by two, with the SP containg the address of A/C (now in memory).
+/// After PUSHing, the SP will have been decremented by two, with the SP containing the address of A/C (now in memory).
 ///
-/// When POPing, the same respective pairs of memory locations will be read to the same pair of registers, and the SP increased by two.
+/// When POPing, the same respective pairs of memory locations will be read to the same pair of registers, and the SP increased
+/// by two.
 ///
 /// Care must be taken, especially when POPing the stack, as there is no under/overflow protection or detection,
-/// just like with the PC incrememnting during instruction execution.
+/// just like with the PC incrementing during instruction execution.
 ///
 /// In fact, by design, POPing the final value from the stack will result in an overflow bringing the SP back to `0x0000`.
 ///
-/// In terms of pseudocode, a PUSH followed by a POP can view as the following microcode, where SP is a pointer to the memory address:
+/// In terms of pseudo-code, a PUSH followed by a POP can view as the following microcode, where SP is a pointer to the memory
+/// address:
 ///
-/// ```plaintext
-/// # PUSH
+/// ```cpp
+/// // PUSH
 /// SP -= 1
 /// *SP = B
 /// SP -= 1
 /// *SP = A
 ///
-/// # POP
+/// // POP
 /// A = *SP
 /// SP += 1
 /// B = *SP
@@ -124,10 +122,32 @@ use std::convert::{TryFrom, From};
 ///
 /// **NB:** I Think I might update this to allow pushing/popping the PC, this would make it very easy (hardware wise) to handle
 /// calling and returning functions
+///
+/// ## MADR - ADR Register Manipulation
+///
+/// The ADR register is a 16-bit register, it's value can be set/read to the general purpose registers.
+///
+/// The registers A and B are paired, as are the registers C and D.
+///
+/// Although still two distinct bytes, the A and C registers should be considered the more significant byte whilst B and D
+/// registers the lesser;
+/// the more significant byte will be stored at the lower address in the stack, the pair of registers are big-endian.
+///
+///
+/// These ADR manipulation operations are of pattern `0000 10DR`.
+///
+/// The D bit indicates the direction; 0 for write-to and 1 for read-from the ADR register.
+///
+/// The R bit indicates the register pair; 0 for A & B and 1 for C & D.
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Instruction {
     /// Reserved instruction, contains the entire byte
     Reserved(u8),
+    /// Manipulate ADR, see section above
+    Madr {
+        d: InstructionMadrDirection,
+        r: InstructionRegisterPair,
+    },
     /// Jump, see member doc
     Jump(InstructionJumpCondition),
     /// Load the the next byte into register `AAA` (PC will be incremented a second time)
@@ -150,7 +170,7 @@ pub enum Instruction {
     /// Stack manipulation, see member doc
     Stck {
         d: InstructionStckDirection,
-        r: InstructionStckRegisterPair,
+        r: InstructionRegisterPair,
     },
     /// Clear the 'F' register, by setting it to `0000 0000`
     Clrf,
@@ -169,12 +189,10 @@ impl Instruction {
     /// assert!(Instruction::Alu(AluOperation::Or).is_valid());
     ///
     /// assert!(!Instruction::Reserved(0).is_valid());
-    /// assert!(!Instruction::Alu(AluOperation::Reserved(0b0011)).is_valid());
     /// ```
     pub fn is_valid(self) -> bool {
         match self {
             Instruction::Reserved(_) => false,
-            Instruction::Alu(op) => op.is_valid(),
             _ => true,
         }
     }
@@ -189,14 +207,10 @@ impl Instruction {
     /// assert_eq!(Instruction::Alu(AluOperation::Or).data_length(), 0);
     ///
     /// assert_eq!(Instruction::LoadImmediate{ aaa: 0 }.data_length(), 1);
-    /// assert_eq!(Instruction::Save { aaa: 0 }.data_length(), 2);
     /// ```
     pub fn data_length(self) -> usize {
         match self {
             Instruction::LoadImmediate { .. } => 1,
-            Instruction::LoadIndirect { .. } |
-            Instruction::Jump(..) |
-            Instruction::Save { .. } => 2,
             _ => 0,
         }
     }
@@ -206,7 +220,7 @@ impl Instruction {
     /// # Examples
     ///
     /// ```
-    /// # use pir_8_emu::isa::instruction::{InstructionStckRegisterPair, InstructionStckDirection, AluOperation, Instruction};
+    /// # use pir_8_emu::isa::instruction::{InstructionStckDirection, InstructionRegisterPair, AluOperation, Instruction};
     /// # use pir_8_emu::isa::GeneralPurposeRegister;
     /// # let registers = GeneralPurposeRegister::defaults();
     /// assert_eq!(Instruction::Clrf.display(&registers).to_string(),
@@ -215,7 +229,7 @@ impl Instruction {
     ///            "ALU OR");
     /// assert_eq!(Instruction::Stck {
     ///                d: InstructionStckDirection::Push,
-    ///                r: InstructionStckRegisterPair::Cd,
+    ///                r: InstructionRegisterPair::Cd,
     ///            }.display(&registers).to_string(),
     ///            "STCK PUSH C&D");
     ///
@@ -268,7 +282,14 @@ impl From<u8> for Instruction {
                (raw & 0b0000_0100) != 0,
                (raw & 0b0000_0010) != 0,
                (raw & 0b0000_0001) != 0) {
-            (false, false, false, false, _, _, _, _) => Instruction::Reserved(raw),
+            (false, false, false, false, false, _, _, _) => Instruction::Reserved(raw),
+            (false, false, false, false, true, false, _, _) => Instruction::Reserved(raw),
+            (false, false, false, false, true, true, d, r) => {
+                Instruction::Madr {
+                    d: d.into(),
+                    r: r.into(),
+                }
+            }
             (false, false, false, true, false, _, _, _) => {
                 Instruction::Jump(InstructionJumpCondition::try_from(raw & 0b0000_1111).expect("Wrong raw instruction slicing for JUMP condition parse"))
             }
@@ -310,6 +331,7 @@ impl Into<u8> for Instruction {
     fn into(self) -> u8 {
         match self {
             Instruction::Reserved(raw) => raw,
+            Instruction::Madr { d, r } => 0b0000_1100 | (d as u8) | (r as u8),
             Instruction::Jump(cond) => 0b0001_0000 | (cond as u8),
             Instruction::LoadImmediate { aaa } => 0b0001_1000 | aaa,
             Instruction::LoadIndirect { aaa } => 0b0010_0000 | aaa,
@@ -329,11 +351,32 @@ impl Into<u8> for Instruction {
 }
 
 
+/// The `D` bit indicates the direction – `0` for write-to (`MADR WRITE`) and `1` for read-from (`MADR READ`) the `ADR`
+/// register.
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum InstructionMadrDirection {
+    Write = 0b00,
+    Read = 0b10,
+}
+
+impl From<bool> for InstructionMadrDirection {
+    fn from(raw: bool) -> InstructionMadrDirection {
+        match raw {
+            false => InstructionMadrDirection::Write,
+            true => InstructionMadrDirection::Read,
+        }
+    }
+}
+
+
 /// This Instruction takes a three bit operand indicating under what condition the jump should be performed.
 ///
-/// If the condition is met, the next two bytes after this Jump instruction are loaded into the PC.
+/// If the condition is met, the value of ADR is loaded into the PC.
 ///
-/// If the condition is not met, the PC is incremented by two, skipping over the two bytes of the target address.
+/// If the condition is not met, no further special action is taken; the PC would have already been incremented as part of
+/// loading the instruction.
+///
+/// **NB:** The value of ADR must have been set with the desired target location prior to the JUMP instruction being performed.
 ///
 ///
 /// This table shows what combination of bits to the JUMP instruction check what flags and in what combination
@@ -417,16 +460,16 @@ impl From<bool> for InstructionStckDirection {
 
 /// The R bit indicates the register pair; 0 for A & B and 1 for C & D.
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub enum InstructionStckRegisterPair {
+pub enum InstructionRegisterPair {
     Ab = 0b0,
     Cd = 0b1,
 }
 
-impl From<bool> for InstructionStckRegisterPair {
-    fn from(raw: bool) -> InstructionStckRegisterPair {
+impl From<bool> for InstructionRegisterPair {
+    fn from(raw: bool) -> InstructionRegisterPair {
         match raw {
-            false => InstructionStckRegisterPair::Ab,
-            true => InstructionStckRegisterPair::Cd,
+            false => InstructionRegisterPair::Ab,
+            true => InstructionRegisterPair::Cd,
         }
     }
 }
@@ -444,35 +487,39 @@ impl From<bool> for InstructionStckRegisterPair {
 ///
 /// All will set the ZERO flag if the output (register S) is `0000 0000`.
 ///
-/// All will set the Parity flag if the number of high bits are even.
+/// All will set the PARITY flag if the number of high bits are even in the S register.
+///
+/// The ADD, SUB, ADDC, and SUBC operations will set the carry bit in F to carry out value from adders.
 ///
 /// FFFF | Name | Count | Description
 /// -----|------|-------|------------
 /// 0000 | ADD  |   1   | Addition of register X and register Y
 /// 0001 | SUB  |   1   | Subtraction of register Y from register X (X-Y)
-/// 0010 | NOT  |   1   | Bitwise NOT
-/// 0011 |      |   1   | Reserved
+/// 0010 | ADDC |   1   | Addition of register X and register Y, using the carry bit from F (X+Y+C)
+/// 0011 | SUBC |   1   | Subtraction of register Y from register X (X-Y), using the carry bit from F (X-Y-C)
 /// 0100 |  OR  |   1   | Bitwise OR
 /// 0101 | XOR  |   1   | Bitwise XOR
 /// 0110 | AND  |   1   | Bitwise AND
-/// 0111 |      |   1   | Reserved
-/// 1DTT |      |   8   | Shift or Rotate, see section below
+/// 0111 | NOT  |   1   | Bitwise NOT (unary operation)
+/// 1DTT |      |   8   | Shift or Rotate, see section below (unary operation)
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum AluOperation {
-    /// Reserved operation, contains the entire nibble
-    Reserved(u8),
     /// Addition of register X and register Y
     Add,
     /// Subtraction of register Y from register X (X-Y)
     Sub,
-    /// Bitwise NOT
-    Not,
+    /// Addition of register X and register Y, using the carry bit from F
+    AddC,
+    /// Subtraction of register Y from register X (X-Y), using the carry bit from F
+    SubC,
     /// Bitwise OR
     Or,
     /// Bitwise XOR
     Xor,
     /// Bitwise AND
     And,
+    /// Bitwise NOT
+    Not,
     /// Shift or Rotate, see member doc
     ShiftOrRotate {
         d: AluOperationShiftOrRotateDirection,
@@ -481,23 +528,6 @@ pub enum AluOperation {
 }
 
 impl AluOperation {
-    /// Check if this operation doesn't use reserved space
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use pir_8_emu::isa::instruction::AluOperation;
-    /// assert!(AluOperation::Or.is_valid());
-    ///
-    /// assert!(!AluOperation::Reserved(0b0011).is_valid());
-    /// ```
-    pub fn is_valid(self) -> bool {
-        match self {
-            AluOperation::Reserved(_) => false,
-            _ => true,
-        }
-    }
-
     /// Perform the ALU operation on the specified operands
     ///
     /// Returns `0` and sets carry for reserved ops.
@@ -535,12 +565,12 @@ impl TryFrom<u8> for AluOperation {
         Ok(match ((nib & 0b1000) != 0, (nib & 0b0100) != 0, (nib & 0b0010) != 0, (nib & 0b0001) != 0) {
             (false, false, false, false) => AluOperation::Add,
             (false, false, false, true) => AluOperation::Sub,
-            (false, false, true, false) => AluOperation::Not,
-            (false, false, true, true) => AluOperation::Reserved(nib),
+            (false, false, true, false) => AluOperation::AddC,
+            (false, false, true, true) => AluOperation::SubC,
             (false, true, false, false) => AluOperation::Or,
             (false, true, false, true) => AluOperation::Xor,
             (false, true, true, false) => AluOperation::And,
-            (false, true, true, true) => AluOperation::Reserved(nib),
+            (false, true, true, true) => AluOperation::Not,
             (true, d, _, _) => {
                 AluOperation::ShiftOrRotate {
                     d: d.into(),
@@ -554,13 +584,14 @@ impl TryFrom<u8> for AluOperation {
 impl Into<u8> for AluOperation {
     fn into(self) -> u8 {
         match self {
-            AluOperation::Reserved(raw) => raw,
             AluOperation::Add => 0b0000,
             AluOperation::Sub => 0b0001,
-            AluOperation::Not => 0b0010,
+            AluOperation::AddC => 0b0010,
+            AluOperation::SubC => 0b0011,
             AluOperation::Or => 0b0100,
             AluOperation::Xor => 0b0101,
             AluOperation::And => 0b0110,
+            AluOperation::Not => 0b0111,
             AluOperation::ShiftOrRotate { d, tt } => {
                 let tt_b: u8 = tt.into();
                 0b1000 | (d as u8) | tt_b
@@ -607,9 +638,9 @@ impl From<bool> for AluOperationShiftOrRotateDirection {
 /// 10 | RTC  | Rotate with carry - the Carry flag is inserted (Carry flag value before it is updated is used)
 /// 11 | RTW  | Rotate without carry - the bit shifted out is inserted
 ///
-/// An example of a Arithemtic shift right; `AXXX XXXB` would become `AAXX XXXX`, with `B` copied to the Carry bit.
+/// An example of a Arithmetic shift right; `AXXX XXXB` would become `AAXX XXXX`, with `B` copied to the Carry bit.
 ///
-/// **NB:** An 'Arithmetic shift left' is the same as performing a 'Logcal shift left', they _can_ be used interchangeably, but
+/// **NB:** An 'Arithmetic shift left' is the same as performing a 'Logical shift left', they _can_ be used interchangeably, but
 /// 'Arithmetic shift left' should be avoided.
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum AluOperationShiftOrRotateType {

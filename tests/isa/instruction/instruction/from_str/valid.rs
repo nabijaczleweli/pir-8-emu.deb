@@ -1,9 +1,38 @@
-use pir_8_emu::isa::instruction::{AluOperationShiftOrRotateDirection, AluOperationShiftOrRotateType, InstructionStckRegisterPair, InstructionJumpCondition,
-                                  InstructionPortDirection, InstructionStckDirection, AluOperation, Instruction};
+use pir_8_emu::isa::instruction::{AluOperationShiftOrRotateDirection, AluOperationShiftOrRotateType, InstructionJumpCondition, InstructionPortDirection,
+                                  InstructionMadrDirection, InstructionStckDirection, InstructionRegisterPair, AluOperation, Instruction};
 use pir_8_emu::isa::GeneralPurposeRegister;
 use self::super::super::alt_gp_registers;
 use std::convert::TryFrom;
 
+
+#[test]
+fn madr() {
+    for regs in &[GeneralPurposeRegister::defaults(), alt_gp_registers()] {
+        assert_eq!(Instruction::from_str("MADR WRITE A&B", regs),
+                   Ok(Instruction::Madr {
+                       d: InstructionMadrDirection::Write,
+                       r: InstructionRegisterPair::Ab,
+                   }));
+
+        assert_eq!(Instruction::from_str("MADR WRITE C&D", regs),
+                   Ok(Instruction::Madr {
+                       d: InstructionMadrDirection::Write,
+                       r: InstructionRegisterPair::Cd,
+                   }));
+
+        assert_eq!(Instruction::from_str("MADR READ A&B", regs),
+                   Ok(Instruction::Madr {
+                       d: InstructionMadrDirection::Read,
+                       r: InstructionRegisterPair::Ab,
+                   }));
+
+        assert_eq!(Instruction::from_str("MADR READ C&D", regs),
+                   Ok(Instruction::Madr {
+                       d: InstructionMadrDirection::Read,
+                       r: InstructionRegisterPair::Cd,
+                   }));
+    }
+}
 
 #[test]
 fn raw() {
@@ -74,10 +103,12 @@ fn alu() {
     for regs in &[GeneralPurposeRegister::defaults(), alt_gp_registers()] {
         assert_eq!(Instruction::from_str("ALU ADD", regs), Ok(Instruction::Alu(AluOperation::Add)));
         assert_eq!(Instruction::from_str("ALU SUB", regs), Ok(Instruction::Alu(AluOperation::Sub)));
-        assert_eq!(Instruction::from_str("ALU NOT", regs), Ok(Instruction::Alu(AluOperation::Not)));
+        assert_eq!(Instruction::from_str("ALU ADDC", regs), Ok(Instruction::Alu(AluOperation::AddC)));
+        assert_eq!(Instruction::from_str("ALU SUBC", regs), Ok(Instruction::Alu(AluOperation::SubC)));
         assert_eq!(Instruction::from_str("ALU OR", regs), Ok(Instruction::Alu(AluOperation::Or)));
         assert_eq!(Instruction::from_str("ALU XOR", regs), Ok(Instruction::Alu(AluOperation::Xor)));
         assert_eq!(Instruction::from_str("ALU AND", regs), Ok(Instruction::Alu(AluOperation::And)));
+        assert_eq!(Instruction::from_str("ALU NOT", regs), Ok(Instruction::Alu(AluOperation::Not)));
 
         assert_eq!(Instruction::from_str("ALU SOR LEFT LSF", regs),
                    Ok(Instruction::Alu(AluOperation::ShiftOrRotate {
@@ -165,25 +196,25 @@ fn stck() {
         assert_eq!(Instruction::from_str("STCK PUSH A&B", regs),
                    Ok(Instruction::Stck {
                        d: InstructionStckDirection::Push,
-                       r: InstructionStckRegisterPair::Ab,
+                       r: InstructionRegisterPair::Ab,
                    }));
 
         assert_eq!(Instruction::from_str("STCK PUSH C&D", regs),
                    Ok(Instruction::Stck {
                        d: InstructionStckDirection::Push,
-                       r: InstructionStckRegisterPair::Cd,
+                       r: InstructionRegisterPair::Cd,
                    }));
 
         assert_eq!(Instruction::from_str("STCK POP A&B", regs),
                    Ok(Instruction::Stck {
                        d: InstructionStckDirection::Pop,
-                       r: InstructionStckRegisterPair::Ab,
+                       r: InstructionRegisterPair::Ab,
                    }));
 
         assert_eq!(Instruction::from_str("STCK POP C&D", regs),
                    Ok(Instruction::Stck {
                        d: InstructionStckDirection::Pop,
-                       r: InstructionStckRegisterPair::Cd,
+                       r: InstructionRegisterPair::Cd,
                    }));
     }
 }

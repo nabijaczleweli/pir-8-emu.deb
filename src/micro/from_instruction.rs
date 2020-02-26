@@ -1,4 +1,4 @@
-use self::super::super::isa::instruction::{InstructionStckRegisterPair, InstructionPortDirection, InstructionStckDirection, AluOperation, Instruction};
+use self::super::super::isa::instruction::{InstructionMadrDirection, InstructionPortDirection, InstructionStckDirection, InstructionRegisterPair, Instruction};
 use self::super::MicroOp;
 
 
@@ -36,8 +36,7 @@ impl MicroOp {
     /// ```
     pub fn from_instruction(instr: Instruction) -> (MicroOpBlock, usize) {
         match instr {
-            Instruction::Reserved(_) |
-            Instruction::Alu(AluOperation::Reserved(_)) => {
+            Instruction::Reserved(_) => {
                 ([// forcebreak
                   MicroOp::Nop,
                   MicroOp::Nop,
@@ -48,15 +47,40 @@ impl MicroOp {
                  6)
             }
 
+            Instruction::Madr { d: InstructionMadrDirection::Write, r } => {
+                let [f, s] = stck_address_pair(r);
+
+                ([// forcebreak
+                  MicroOp::ReadRegister(f),
+                  MicroOp::ReadRegister(s),
+                  MicroOp::AdrWrite,
+                  MicroOp::Nop,
+                  MicroOp::Nop,
+                  MicroOp::Nop],
+                 3)
+            }
+            Instruction::Madr { d: InstructionMadrDirection::Read, r } => {
+                let [f, s] = stck_address_pair(r);
+
+                ([// forcebreak
+                  MicroOp::AdrRead,
+                  MicroOp::WriteRegister(s),
+                  MicroOp::WriteRegister(f),
+                  MicroOp::Nop,
+                  MicroOp::Nop,
+                  MicroOp::Nop],
+                 3)
+            }
+
             Instruction::Jump(cond) => {
                 ([// forcebreak
-                  MicroOp::LoadImmediate,
-                  MicroOp::LoadImmediate,
                   MicroOp::ReadRegister(FLAG_REGISTER_ADDRESS),
                   MicroOp::CheckJumpCondition(cond),
                   MicroOp::Jump,
+                  MicroOp::Nop,
+                  MicroOp::Nop,
                   MicroOp::Nop],
-                 5)
+                 3)
             }
 
             Instruction::LoadImmediate { aaa } => {
@@ -72,24 +96,24 @@ impl MicroOp {
 
             Instruction::LoadIndirect { aaa } => {
                 ([// forcebreak
-                  MicroOp::LoadImmediate,
-                  MicroOp::LoadImmediate,
                   MicroOp::FetchAddress,
                   MicroOp::WriteRegister(aaa),
                   MicroOp::Nop,
+                  MicroOp::Nop,
+                  MicroOp::Nop,
                   MicroOp::Nop],
-                 4)
+                 2)
             }
 
             Instruction::Save { aaa } => {
                 ([// forcebreak
                   MicroOp::ReadRegister(aaa),
-                  MicroOp::LoadImmediate,
-                  MicroOp::LoadImmediate,
                   MicroOp::WriteAddress,
                   MicroOp::Nop,
+                  MicroOp::Nop,
+                  MicroOp::Nop,
                   MicroOp::Nop],
-                 4)
+                 2)
             }
 
             Instruction::Alu(op) => {
@@ -196,9 +220,9 @@ impl MicroOp {
     }
 }
 
-fn stck_address_pair(r: InstructionStckRegisterPair) -> [u8; 2] {
+fn stck_address_pair(r: InstructionRegisterPair) -> [u8; 2] {
     match r {
-        InstructionStckRegisterPair::Ab => [A_REGISTER_ADDRESS, B_REGISTER_ADDRESS],
-        InstructionStckRegisterPair::Cd => [C_REGISTER_ADDRESS, D_REGISTER_ADDRESS],
+        InstructionRegisterPair::Ab => [A_REGISTER_ADDRESS, B_REGISTER_ADDRESS],
+        InstructionRegisterPair::Cd => [C_REGISTER_ADDRESS, D_REGISTER_ADDRESS],
     }
 }

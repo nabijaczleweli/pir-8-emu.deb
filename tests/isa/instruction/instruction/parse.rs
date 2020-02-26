@@ -1,6 +1,33 @@
-use pir_8_emu::isa::instruction::{AluOperationShiftOrRotateDirection, AluOperationShiftOrRotateType, InstructionStckRegisterPair, InstructionJumpCondition,
-                                  InstructionPortDirection, InstructionStckDirection, AluOperation, Instruction};
+use pir_8_emu::isa::instruction::{AluOperationShiftOrRotateDirection, AluOperationShiftOrRotateType, InstructionJumpCondition, InstructionPortDirection,
+                                  InstructionMadrDirection, InstructionStckDirection, InstructionRegisterPair, AluOperation, Instruction};
 
+
+#[test]
+fn madr() {
+    assert_eq!(Instruction::from(0b0000_1100),
+               Instruction::Madr {
+                   d: InstructionMadrDirection::Write,
+                   r: InstructionRegisterPair::Ab,
+               });
+
+    assert_eq!(Instruction::from(0b0000_1101),
+               Instruction::Madr {
+                   d: InstructionMadrDirection::Write,
+                   r: InstructionRegisterPair::Cd,
+               });
+
+    assert_eq!(Instruction::from(0b0000_1110),
+               Instruction::Madr {
+                   d: InstructionMadrDirection::Read,
+                   r: InstructionRegisterPair::Ab,
+               });
+
+    assert_eq!(Instruction::from(0b0000_1111),
+               Instruction::Madr {
+                   d: InstructionMadrDirection::Read,
+                   r: InstructionRegisterPair::Cd,
+               });
+}
 
 #[test]
 fn jump() {
@@ -33,10 +60,12 @@ fn save() {
 fn alu_valid() {
     assert_eq!(Instruction::from(0b0011_0000), Instruction::Alu(AluOperation::Add));
     assert_eq!(Instruction::from(0b0011_0001), Instruction::Alu(AluOperation::Sub));
-    assert_eq!(Instruction::from(0b0011_0010), Instruction::Alu(AluOperation::Not));
+    assert_eq!(Instruction::from(0b0011_0010), Instruction::Alu(AluOperation::AddC));
+    assert_eq!(Instruction::from(0b0011_0011), Instruction::Alu(AluOperation::SubC));
     assert_eq!(Instruction::from(0b0011_0100), Instruction::Alu(AluOperation::Or));
     assert_eq!(Instruction::from(0b0011_0101), Instruction::Alu(AluOperation::Xor));
     assert_eq!(Instruction::from(0b0011_0110), Instruction::Alu(AluOperation::And));
+    assert_eq!(Instruction::from(0b0011_0111), Instruction::Alu(AluOperation::Not));
 }
 
 #[test]
@@ -69,12 +98,6 @@ fn alu_valid_shift_or_rotate() {
 }
 
 #[test]
-fn alu_reserved() {
-    assert_eq!(Instruction::from(0b0011_0011), Instruction::Alu(AluOperation::Reserved(0b0011)));
-    assert_eq!(Instruction::from(0b0011_0111), Instruction::Alu(AluOperation::Reserved(0b0111)));
-}
-
-#[test]
 fn move_() {
     for aaa in 0..=0b111 {
         for bbb in 0..=0b111 {
@@ -90,8 +113,18 @@ fn move_() {
 
 #[test]
 fn port() {
-    single_register(0b1110_1000, |r| Instruction::Port { d: InstructionPortDirection::In, aaa: r });
-    single_register(0b1110_0000, |r| Instruction::Port { d: InstructionPortDirection::Out, aaa: r });
+    single_register(0b1110_1000, |r| {
+        Instruction::Port {
+            d: InstructionPortDirection::In,
+            aaa: r,
+        }
+    });
+    single_register(0b1110_0000, |r| {
+        Instruction::Port {
+            d: InstructionPortDirection::Out,
+            aaa: r,
+        }
+    });
 }
 
 #[test]
@@ -104,25 +137,25 @@ fn stck() {
     assert_eq!(Instruction::from(0b1111_1000),
                Instruction::Stck {
                    d: InstructionStckDirection::Push,
-                   r: InstructionStckRegisterPair::Ab,
+                   r: InstructionRegisterPair::Ab,
                });
 
     assert_eq!(Instruction::from(0b1111_1001),
                Instruction::Stck {
                    d: InstructionStckDirection::Push,
-                   r: InstructionStckRegisterPair::Cd,
+                   r: InstructionRegisterPair::Cd,
                });
 
     assert_eq!(Instruction::from(0b1111_1010),
                Instruction::Stck {
                    d: InstructionStckDirection::Pop,
-                   r: InstructionStckRegisterPair::Ab,
+                   r: InstructionRegisterPair::Ab,
                });
 
     assert_eq!(Instruction::from(0b1111_1011),
                Instruction::Stck {
                    d: InstructionStckDirection::Pop,
-                   r: InstructionStckRegisterPair::Cd,
+                   r: InstructionRegisterPair::Cd,
                });
 }
 
@@ -139,21 +172,26 @@ fn halt() {
 
 #[test]
 fn reserved_block_0() {
-    reserved_block(0b0000_0000, 0b1111);
+    reserved_block(0b0000_0000, 0b111);
 }
 
 #[test]
 fn reserved_block_1() {
-    reserved_block(0b1000_0000, 0b11_1111);
+    reserved_block(0b0000_0100, 0b11);
 }
 
 #[test]
 fn reserved_block_2() {
-    reserved_block(0b1100_0000, 0b1_1111);
+    reserved_block(0b1000_0000, 0b11_1111);
 }
 
 #[test]
 fn reserved_block_3() {
+    reserved_block(0b1100_0000, 0b1_1111);
+}
+
+#[test]
+fn reserved_block_4() {
     reserved_block(0b1111_1100, 0b1);
 }
 
