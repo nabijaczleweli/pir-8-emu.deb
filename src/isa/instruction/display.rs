@@ -1,5 +1,5 @@
-use self::super::{AluOperationShiftOrRotateDirection, AluOperationShiftOrRotateType, InstructionJumpCondition, InstructionStckRegisterPair,
-                  InstructionPortDirection, InstructionStckDirection, AluOperation, Instruction};
+use self::super::{AluOperationShiftOrRotateDirection, AluOperationShiftOrRotateType, InstructionJumpCondition, InstructionPortDirection,
+                  InstructionMadrDirection, InstructionStckDirection, InstructionRegisterPair, AluOperation, Instruction};
 use self::super::super::GeneralPurposeRegisterBank;
 use std::fmt;
 
@@ -19,6 +19,7 @@ impl<'a> fmt::Display for DisplayInstruction<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.instr {
             Instruction::Reserved(raw) => write!(f, "{:#06b}_{:04b}", (raw & 0b1111_0000) >> 4, raw & 0b0000_1111),
+            Instruction::Madr { d, r } => write!(f, "MADR {} {}", d, r),
             Instruction::Jump(cond) => cond.fmt(f),
             Instruction::LoadImmediate { aaa } => write!(f, "LOAD IMM {}", self.registers[*aaa as usize].letter()),
             Instruction::LoadIndirect { aaa } => write!(f, "LOAD IND {}", self.registers[*aaa as usize].letter()),
@@ -30,6 +31,16 @@ impl<'a> fmt::Display for DisplayInstruction<'a> {
             Instruction::Stck { d, r } => write!(f, "STCK {} {}", d, r),
             Instruction::Clrf => f.write_str("CLRF"),
             Instruction::Halt => f.write_str("HALT"),
+        }
+    }
+}
+
+
+impl fmt::Display for InstructionMadrDirection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            InstructionMadrDirection::Write => f.write_str("WRITE"),
+            InstructionMadrDirection::Read => f.write_str("READ"),
         }
     }
 }
@@ -71,11 +82,11 @@ impl fmt::Display for InstructionStckDirection {
 }
 
 
-impl fmt::Display for InstructionStckRegisterPair {
+impl fmt::Display for InstructionRegisterPair {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            InstructionStckRegisterPair::Ab => f.write_str("A&B"),
-            InstructionStckRegisterPair::Cd => f.write_str("C&D"),
+            InstructionRegisterPair::Ab => f.write_str("A&B"),
+            InstructionRegisterPair::Cd => f.write_str("C&D"),
         }
     }
 }
@@ -84,13 +95,14 @@ impl fmt::Display for InstructionStckRegisterPair {
 impl fmt::Display for AluOperation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            AluOperation::Reserved(raw) => write!(f, "{:#06b}", raw),
             AluOperation::Add => f.write_str("ADD"),
             AluOperation::Sub => f.write_str("SUB"),
-            AluOperation::Not => f.write_str("NOT"),
+            AluOperation::AddC => f.write_str("ADDC"),
+            AluOperation::SubC => f.write_str("SUBC"),
             AluOperation::Or => f.write_str("OR"),
             AluOperation::Xor => f.write_str("XOR"),
             AluOperation::And => f.write_str("AND"),
+            AluOperation::Not => f.write_str("NOT"),
             AluOperation::ShiftOrRotate { d, tt } => write!(f, "SOR {} {}", d, tt),
         }
     }

@@ -1,6 +1,15 @@
-use pir_8_emu::isa::instruction::{AluOperationShiftOrRotateDirection, AluOperationShiftOrRotateType, InstructionStckRegisterPair, InstructionJumpCondition,
-                                  InstructionPortDirection, InstructionStckDirection, AluOperation, Instruction};
+use pir_8_emu::isa::instruction::{AluOperationShiftOrRotateDirection, AluOperationShiftOrRotateType, InstructionJumpCondition, InstructionPortDirection,
+                                  InstructionMadrDirection, InstructionStckDirection, InstructionRegisterPair, AluOperation, Instruction};
 
+
+#[test]
+fn madr() {
+    for &d in &[InstructionMadrDirection::Write, InstructionMadrDirection::Read] {
+        for &r in &[InstructionRegisterPair::Ab, InstructionRegisterPair::Cd] {
+            assert_eq!(Instruction::Madr { d: d, r: r }.data_length(), 0);
+        }
+    }
+}
 
 #[test]
 fn jump() {
@@ -12,7 +21,7 @@ fn jump() {
                    InstructionJumpCondition::Jmzl,
                    InstructionJumpCondition::Jmpl,
                    InstructionJumpCondition::Jump] {
-        assert_eq!(Instruction::Jump(cond).data_length(), 2);
+        assert_eq!(Instruction::Jump(cond).data_length(), 0);
     }
 }
 
@@ -23,22 +32,24 @@ fn load_immediate() {
 
 #[test]
 fn load_indirect() {
-    single_register(2, |r| Instruction::LoadIndirect { aaa: r });
+    single_register(0, |r| Instruction::LoadIndirect { aaa: r });
 }
 
 #[test]
 fn save() {
-    single_register(2, |r| Instruction::Save { aaa: r });
+    single_register(0, |r| Instruction::Save { aaa: r });
 }
 
 #[test]
 fn alu_valid() {
     assert_eq!(Instruction::Alu(AluOperation::Add).data_length(), 0);
     assert_eq!(Instruction::Alu(AluOperation::Sub).data_length(), 0);
-    assert_eq!(Instruction::Alu(AluOperation::Not).data_length(), 0);
+    assert_eq!(Instruction::Alu(AluOperation::AddC).data_length(), 0);
+    assert_eq!(Instruction::Alu(AluOperation::SubC).data_length(), 0);
     assert_eq!(Instruction::Alu(AluOperation::Or).data_length(), 0);
     assert_eq!(Instruction::Alu(AluOperation::Xor).data_length(), 0);
     assert_eq!(Instruction::Alu(AluOperation::And).data_length(), 0);
+    assert_eq!(Instruction::Alu(AluOperation::Not).data_length(), 0);
 }
 
 #[test]
@@ -51,12 +62,6 @@ fn alu_valid_shift_or_rotate() {
             assert_eq!(Instruction::Alu(AluOperation::ShiftOrRotate { d: d, tt: tt }).data_length(), 0);
         }
     }
-}
-
-#[test]
-fn alu_reserved() {
-    assert_eq!(Instruction::Alu(AluOperation::Reserved(0b0011)).data_length(), 0);
-    assert_eq!(Instruction::Alu(AluOperation::Reserved(0b0111)).data_length(), 0);
 }
 
 #[test]
@@ -75,8 +80,18 @@ fn move_() {
 
 #[test]
 fn port() {
-    single_register(0, |r| Instruction::Port { d: InstructionPortDirection::In, aaa: r });
-    single_register(0, |r| Instruction::Port { d: InstructionPortDirection::Out, aaa: r });
+    single_register(0, |r| {
+        Instruction::Port {
+            d: InstructionPortDirection::In,
+            aaa: r,
+        }
+    });
+    single_register(0, |r| {
+        Instruction::Port {
+            d: InstructionPortDirection::Out,
+            aaa: r,
+        }
+    });
 }
 
 #[test]
@@ -87,7 +102,7 @@ fn comp() {
 #[test]
 fn stck() {
     for &d in &[InstructionStckDirection::Push, InstructionStckDirection::Pop] {
-        for &r in &[InstructionStckRegisterPair::Ab, InstructionStckRegisterPair::Cd] {
+        for &r in &[InstructionRegisterPair::Ab, InstructionRegisterPair::Cd] {
             assert_eq!(Instruction::Stck { d: d, r: r }.data_length(), 0);
         }
     }

@@ -3,8 +3,27 @@ use self::super::missing_token;
 
 
 #[test]
+fn madr() {
+    static TOKENS_MADR: &[&str] = &["WRITE", "READ"];
+
+    missing_token("MADR", |len, _| ParseInstructionError::MissingToken(len, TOKENS_MADR));
+}
+
+#[test]
+fn madr_register_pair() {
+    static TOKENS_MADR_REG_PAIR: &[&str] = &["A&B", "C&D"];
+
+    for d in &["WRITE", "READ"] {
+        for pad in 1..5 {
+            missing_token(&format!("MADR{e:w$}{}", d, e = "", w = pad),
+                          |len, _| ParseInstructionError::MissingToken(len, TOKENS_MADR_REG_PAIR));
+        }
+    }
+}
+
+#[test]
 fn alu() {
-    static TOKENS_ALU: &[&str] = &["ADD", "SUB", "NOT", "OR", "XOR", "AND", "SOR", "[raw operation literal]"];
+    static TOKENS_ALU: &[&str] = &["ADD", "SUB", "ADDC", "SUBC", "OR", "XOR", "AND", "NOT", "SOR", "[raw operation literal]"];
 
     missing_token("ALU", |len, _| ParseInstructionError::MissingToken(len, TOKENS_ALU));
 }
