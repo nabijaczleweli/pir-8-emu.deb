@@ -9,7 +9,7 @@
 //! (as in the `emulate_dumb` example):
 //!
 //! ```
-//! # use pir_8_emu::isa::instruction::{InstructionMadrDirection, InstructionRegisterPair, Instruction};
+//! # use pir_8_emu::isa::instruction::{InstructionLoadImmediateWideRegisterPair, InstructionMadrDirection, InstructionRegisterPair, Instruction};
 //! # use pir_8_emu::isa::{GeneralPurposeRegister, SpecialPurposeRegister};
 //! # use pir_8_emu::micro::{MicroOp, NEXT_INSTRUCTION};
 //! # use pir_8_emu::vm::{Memory, Ports};
@@ -20,18 +20,15 @@
 //! let mut adr       = SpecialPurposeRegister::new("Memory Address", "ADR");
 //! let mut ins       = SpecialPurposeRegister::new("Instruction", "INS");
 //!
-//! let mut memory = Memory::from(&[Instruction::LoadImmediate { aaa: 0b100 }.into(),
+//! let mut memory = Memory::from(&[Instruction::LoadImmediateWide { rr: InstructionLoadImmediateWideRegisterPair::Adr }.into(),
 //!                                 0x01,
-//!                                 Instruction::LoadImmediate { aaa: 0b101 }.into(),
 //!                                 0x10,
-//!                                 Instruction::Madr { d: InstructionMadrDirection::Write,
-//!                                                     r: InstructionRegisterPair::Ab }.into(),
-//!                                 Instruction::LoadIndirect { aaa: 0b100 }.into(),
-//!                                 Instruction::LoadImmediate { aaa: 0b101 }.into(),
+//!                                 Instruction::LoadIndirect { rrr: 0b100 }.into(),
+//!                                 Instruction::LoadImmediateByte { rrr: 0b101 }.into(),
 //!                                 0x69,
-//!                                 Instruction::Move { aaa: 0b100, bbb: 0b110 }.into(),
-//!                                 Instruction::Move { aaa: 0b101, bbb: 0b100 }.into(),
-//!                                 Instruction::Move { aaa: 0b110, bbb: 0b101 }.into(),
+//!                                 Instruction::Move { qqq: 0b100, rrr: 0b110 }.into(),
+//!                                 Instruction::Move { qqq: 0b101, rrr: 0b100 }.into(),
+//!                                 Instruction::Move { qqq: 0b110, rrr: 0b101 }.into(),
 //!                                 Instruction::Halt.into()][..]);
 //! memory[0x0110] = 0xA1;
 //!

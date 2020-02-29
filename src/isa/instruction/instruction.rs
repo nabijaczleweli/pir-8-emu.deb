@@ -24,44 +24,100 @@ use std::convert::{TryFrom, From};
 ///
 /// The 'name' is for either a group or single instruction.
 ///
-/// 'Count' is how many of the 256 possible instructions are used by that bit pattern; HALT for example is exactly one
-/// instruction, whilst MOVE is effectively 64 possible combinations [this was added to help me keep track of how many
-/// operations I've defined, it should add up to 256].
+/// 'Count' is how many of the 256 possible instructions are used by that bit pattern;
+/// HALT for example is exactly one instruction, whilst MOVE is effectively 64 possible combinations
+/// [this was added to help me keep track of how many operations I've defined, it should add up to 256].
 ///
 /// Bit Mask  | Name | Count | Description
 /// ----------|------|-------|------------
-/// 0000 0XXX |      |     8 | Reserved
-/// 0000 10XX |      |     4 | Reserved
-/// 0000 11XX | MADR |     4 | Move a value to/from the ADR register, see section below
-/// 0001 0XXX | JUMP |     8 | Jump, see section below
-/// 0001 1AAA | LOAD |     8 | Load the the next byte into register `AAA`
-///                       |||| (PC will be incremented a second time)
-/// 0010 0AAA | LOAD |     8 | Load value in address indicated by `ADR` into register `AAA`
-/// 0010 1AAA | SAVE |     8 | Store value in register `AAA` in address indicated by `ADR`
+/// 000X XXXX | LOAD |    32 | Load, see section below
+/// 0010 0XXX | JUMP |     8 | Jump, see section below
+/// 0010 1RRR | SAVE |     8 | Store value in register `RRR` in address indicated by `ADR`
 /// 0011 XXXX | ALU  |    16 | ALU based operations, see section below
-/// 01AA ABBB | MOVE |    64 | Move a value from register `AAA` to register `BBB`
+/// 01QQ QRRR | MOVE |    64 | Move a value from register `QQQ` to register `RRR`
 /// 10XX XXXX |      |    64 | Reserved
-/// 110X XXXX |      |    32 | Reserved
+/// 1100 XXXX |      |    16 | Reserved
+/// 1101 0XXX |      |     8 | Reserved
+/// 1101 10XX | MADR |     4 | Move a value to/from the ADR register, see section below
+/// 1101 11XX |      |     4 | Reserved
 /// 1110 XXXX | PORT |    16 | Perform I/O, see section below
-/// 1111 0AAA | COMP |     8 | Compare register S with register `AAA`, see section below
+/// 1111 0RRR | COMP |     8 | Compare register S with register `RRR`, see section below
 /// 1111 10XX | STCK |     4 | Stack manipulation, see section below
 /// 1111 110X |      |     2 | Reserved
-/// 1111 1110 | CLRF |     1 | Clear the 'F' register, by setting it to `0000 0000`
+/// 1111 1110 | CLRF |     1 | Clear the F register, by setting it to `0000 0000`
 /// 1111 1111 | HALT |     1 | Stop the CPU from doing any more execution
+///
+/// ## LOAD
+///
+/// There are various types of load instruction, all under the same `000X XXXX` pattern.
+/// They may further increment the PC, as described in their relevant sub-sections.
+/// Some of the potential instruction patterns are simply reserved.
+///
+/// The following table is a break down of possible LOAD instructions.
+/// If you consider load instruction pattern as `000M XXXX`, the `M` bit is `0` for single byte loads and `1` for multi-byte loads.
+///
+/// Bit Mask | Load Type      | Description
+/// ---------|----------------|------------
+///   0 0RRR | Byte immediate | Load the the next byte into register `RRR`
+///   0 1RRR | From memory    | Load the byte address by `ADR` into register `RRR`
+///   1 00XX | Wide immediate | Load the the next two bytes into a register pair
+///   1 01XX |                | Reserved
+///   1 1XXX |                | Reserved
+///
+/// ### Wide Immediate
+///
+/// When performing a wide immediate load, two bytes are read from memory into a pair of registers, as indicated by the two
+/// bits `RR`.
+///
+/// The first byte read (after the actual LOAD instruction itself) is loaded as the high byte, the second is the low byte;
+/// registers A, C and X are considered the 'high byte' for this purpose;
+/// if loading into ADR, the high/low bytes are loaded as the high/low byte of the address for ADR.
+///
+/// RR | Registers
+/// ---|----------
+/// 00 | A and B
+/// 01 | C and D
+/// 10 | X and Y
+/// 11 | ADR
+///
+/// The PC is incremented twice more.
+///
+/// ### Byte Immediate
+///
+/// When performing a byte immediate load, the next byte (after this instruction) is read from memory into a register,
+/// as indicated by the bits `RRR`.
+///
+/// The PC is incremented once more.
+///
+/// ### From memory
+///
+/// For loading from memory, the memory address to load from should have already been set in the ADR register and the
+/// instruction says what register to load into.
+///
+/// The PC is not incremented any further.
 ///
 /// ## PORT - I/O
 ///
-/// The PORT instruction in the form `1110 DAAA` will perform I/O on the port specified in register A.
+/// The PORT instruction in the form `1110 DRRR` will perform I/O on the port specified in register A.
 ///
-/// The `D` bit specifies the direction; `1` for reading in from the port (`PORT IN`) and `0` for writing out to the port
-/// (`PORT OUT`).
-/// The `AAA` bits specify the register to write to (D=1) or read from (D=0).
+/// The `D` bit specifies the direction;
+/// `1` for reading in from the port (PORT IN) and `0` for writing out to the port (PORT OUT).
+/// The `RRR` bits specify the register to write to (IN from the selected device) or read from (OUT to the selected device).
+///
+/// It is possible to read a value form a selected device to the A register, via `1110 1100`, which then changes the selected device.
+/// This will be stable though, and would require a further such operation in order to for the device selection to change once more.
+/// The value is latched on the clock edge.
+///
+/// **NB:** It is currently planned the data is be latched on the rising edge.
+/// The clock signal will also be exposed out for I/O device, though it may only be done so when the CPU is expecting to read/write.
+/// The control line to signify to I/O devices that they should read/write would also be exposed, but under what timings is not yet determined.
 ///
 /// ## COMP - Compare
 ///
-/// The compare instruction will compare the S register with a selected register.
+/// The compare instruction will compare the S register with a register selected by bits `RRR`.
 ///
-/// It will set the Zero and Parity flag based on the value of the S register; the Zero flag if all the bits are zero,
+/// It will set the Zero and Parity flag based on the value of the S register;
+/// the Zero flag if all the bits are zero, Parity if the number of set bits is even.
 /// Parity if the number of set bits is even.
 ///
 /// Compare will set the Equal flag if the two registers have the same bit pattern.
@@ -73,7 +129,7 @@ use std::convert::{TryFrom, From};
 ///
 /// **NB:** This might change to instead compare just the X and Y register.
 ///
-/// ## Stack Manipulation
+/// ## STCK - Stack Manipulation
 ///
 /// When dealing with the stack, a pair of registers will be moved to or from 'the stack' and the SP updated to reflect the
 /// changed address.
@@ -86,9 +142,11 @@ use std::convert::{TryFrom, From};
 ///
 /// The Stack manipulation operations are of pattern `1111 10DR`.
 ///
-/// The D bit indicates the direction; 0 for PUSH and 1 for POP.
+/// The `D` bit indicates the direction;
+/// `0` for PUSH and `1` for POP.
 ///
-/// The R bit indicates the register pair; 0 for A & B and 1 for C & D.
+/// The `R` bit indicates the register pair;
+/// `0` for A & B and `1` for C & D.
 ///
 ///
 /// When PUSHing B/D will go to the address one less than the current SP, whilst A/C will go to address two less than the SP.
@@ -136,43 +194,47 @@ use std::convert::{TryFrom, From};
 ///
 /// These ADR manipulation operations are of pattern `0000 10DR`.
 ///
-/// The D bit indicates the direction; 0 for write-to and 1 for read-from the ADR register.
+/// The `D` bit indicates the direction;
+/// `0` for write-to and `1` for read-from the ADR register.
 ///
-/// The R bit indicates the register pair; 0 for A & B and 1 for C & D.
+/// The `R` bit indicates the register pair;
+/// `0` for A & B and `1` for C & D.
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Instruction {
     /// Reserved instruction, contains the entire byte
     Reserved(u8),
+    /// Load the the next byte into register `RRR` (PC will be incremented a second time), see section above
+    LoadImmediateByte { rrr: u8, },
+    /// Load the the next two byte into register pair `RR` (PC will be incremented two more times), see section above
+    LoadImmediateWide { rr: InstructionLoadImmediateWideRegisterPair, },
+    /// Load the byte at the address specified by `ADR` into register `RRR`, see section above
+    LoadIndirect { rrr: u8, },
+    /// Jump, see member doc
+    Jump(InstructionJumpCondition),
+    /// Store value in register `RRR` in address indicated by the next two bytes (PC will be incremented two more times)
+    Save { rrr: u8, },
+    /// ALU based operations, see member doc
+    Alu(AluOperation),
+    /// Move a value from register `QQQ` to register `RRR`
+    Move { qqq: u8, rrr: u8, },
     /// Manipulate ADR, see section above
     Madr {
         d: InstructionMadrDirection,
         r: InstructionRegisterPair,
     },
-    /// Jump, see member doc
-    Jump(InstructionJumpCondition),
-    /// Load the the next byte into register `AAA` (PC will be incremented a second time)
-    LoadImmediate { aaa: u8, },
-    /// Load value in address indicated by the next two bytes into register `AAA` (PC will be incremented two more times)
-    LoadIndirect { aaa: u8, },
-    /// Store value in register `AAA` in address indicated by the next two bytes (PC will be incremented two more times)
-    Save { aaa: u8, },
-    /// ALU based operations, see member doc
-    Alu(AluOperation),
-    /// Move a value from register `AAA` to register `BBB`
-    Move { aaa: u8, bbb: u8, },
     /// Perform I/O, see section above
     Port {
         d: InstructionPortDirection,
-        aaa: u8,
+        rrr: u8,
     },
-    /// Compare register S with register `AAA`, see section above
-    Comp { aaa: u8, },
+    /// Compare register S with register `RRR`, see section above
+    Comp { rrr: u8, },
     /// Stack manipulation, see member doc
     Stck {
         d: InstructionStckDirection,
         r: InstructionRegisterPair,
     },
-    /// Clear the 'F' register, by setting it to `0000 0000`
+    /// Clear the F register, by setting it to `0000 0000`
     Clrf,
     /// Stop the CPU from doing any more execution
     Halt,
@@ -202,15 +264,17 @@ impl Instruction {
     /// # Examples
     ///
     /// ```
-    /// # use pir_8_emu::isa::instruction::{AluOperation, Instruction};
+    /// # use pir_8_emu::isa::instruction::{InstructionLoadImmediateWideRegisterPair, AluOperation, Instruction};
     /// assert_eq!(Instruction::Clrf.data_length(), 0);
     /// assert_eq!(Instruction::Alu(AluOperation::Or).data_length(), 0);
     ///
-    /// assert_eq!(Instruction::LoadImmediate{ aaa: 0 }.data_length(), 1);
+    /// assert_eq!(Instruction::LoadImmediateByte { rrr: 0 }.data_length(), 1);
+    /// assert_eq!(Instruction::LoadImmediateWide { rr: InstructionLoadImmediateWideRegisterPair::Ab }.data_length(), 2);
     /// ```
     pub fn data_length(self) -> usize {
         match self {
-            Instruction::LoadImmediate { .. } => 1,
+            Instruction::LoadImmediateByte { .. } => 1,
+            Instruction::LoadImmediateWide { .. } => 2,
             _ => 0,
         }
     }
@@ -258,7 +322,7 @@ impl Instruction {
     ///            Ok(Instruction::Jump(InstructionJumpCondition::Jmpl)));
     ///
     /// assert_eq!(Instruction::from_str("LOAD IND B", &registers),
-    ///            Ok(Instruction::LoadIndirect { aaa: 0b101 }));
+    ///            Ok(Instruction::LoadIndirect { rrr: 0b101 }));
     ///
     /// assert_eq!(Instruction::from_str("ALU SOR RIGHT ASF", &registers),
     ///            Ok(Instruction::Alu(AluOperation::ShiftOrRotate {
@@ -282,38 +346,47 @@ impl From<u8> for Instruction {
                (raw & 0b0000_0100) != 0,
                (raw & 0b0000_0010) != 0,
                (raw & 0b0000_0001) != 0) {
-            (false, false, false, false, false, _, _, _) => Instruction::Reserved(raw),
-            (false, false, false, false, true, false, _, _) => Instruction::Reserved(raw),
-            (false, false, false, false, true, true, d, r) => {
-                Instruction::Madr {
-                    d: d.into(),
-                    r: r.into(),
+            (false, false, false, false, false, _, _, _) => Instruction::LoadImmediateByte { rrr: raw & 0b0000_0111 },
+            (false, false, false, false, true, _, _, _) => Instruction::LoadIndirect { rrr: raw & 0b0000_0111 },
+            (false, false, false, true, false, false, _, _) => {
+                Instruction::LoadImmediateWide {
+                    rr: InstructionLoadImmediateWideRegisterPair::try_from(raw & 0b0000_0011)
+                        .expect("Wrong raw instruction slicing for LOAD IMM WIDE register pair parse"),
                 }
             }
-            (false, false, false, true, false, _, _, _) => {
+            (false, false, false, true, false, true, _, _) => Instruction::Reserved(raw),
+            (false, false, false, true, true, _, _, _) => Instruction::Reserved(raw),
+
+            (false, false, true, false, false, _, _, _) => {
                 Instruction::Jump(InstructionJumpCondition::try_from(raw & 0b0000_1111).expect("Wrong raw instruction slicing for JUMP condition parse"))
             }
-            (false, false, false, true, true, _, _, _) => Instruction::LoadImmediate { aaa: raw & 0b0000_0111 },
-            (false, false, true, false, false, _, _, _) => Instruction::LoadIndirect { aaa: raw & 0b0000_0111 },
-            (false, false, true, false, true, _, _, _) => Instruction::Save { aaa: raw & 0b0000_0111 },
+            (false, false, true, false, true, _, _, _) => Instruction::Save { rrr: raw & 0b0000_0111 },
             (false, false, true, true, _, _, _, _) => {
                 Instruction::Alu(AluOperation::try_from(raw & 0b0000_1111).expect("Wrong raw instruction slicing for ALU op parse"))
             }
             (false, true, _, _, _, _, _, _) => {
                 Instruction::Move {
-                    aaa: (raw & 0b0011_1000) >> 3,
-                    bbb: raw & 0b0000_0111,
+                    qqq: (raw & 0b0011_1000) >> 3,
+                    rrr: raw & 0b0000_0111,
                 }
             }
             (true, false, _, _, _, _, _, _) => Instruction::Reserved(raw),
-            (true, true, false, _, _, _, _, _) => Instruction::Reserved(raw),
+            (true, true, false, false, _, _, _, _) => Instruction::Reserved(raw),
+            (true, true, false, true, false, _, _, _) => Instruction::Reserved(raw),
+            (true, true, false, true, true, false, d, r) => {
+                Instruction::Madr {
+                    d: d.into(),
+                    r: r.into(),
+                }
+            }
+            (true, true, false, true, true, true, _, _) => Instruction::Reserved(raw),
             (true, true, true, false, d, _, _, _) => {
                 Instruction::Port {
                     d: d.into(),
-                    aaa: raw & 0b0000_0111,
+                    rrr: raw & 0b0000_0111,
                 }
             }
-            (true, true, true, true, false, _, _, _) => Instruction::Comp { aaa: raw & 0b0000_0111 },
+            (true, true, true, true, false, _, _, _) => Instruction::Comp { rrr: raw & 0b0000_0111 },
             (true, true, true, true, true, false, d, r) => {
                 Instruction::Stck {
                     d: d.into(),
@@ -331,18 +404,19 @@ impl Into<u8> for Instruction {
     fn into(self) -> u8 {
         match self {
             Instruction::Reserved(raw) => raw,
-            Instruction::Madr { d, r } => 0b0000_1100 | (d as u8) | (r as u8),
-            Instruction::Jump(cond) => 0b0001_0000 | (cond as u8),
-            Instruction::LoadImmediate { aaa } => 0b0001_1000 | aaa,
-            Instruction::LoadIndirect { aaa } => 0b0010_0000 | aaa,
-            Instruction::Save { aaa } => 0b0010_1000 | aaa,
+            Instruction::LoadImmediateByte { rrr } => 0b0000_0000 | 0b0_0000 | rrr,
+            Instruction::LoadIndirect { rrr } => 0b0000_0000 | 0b0_1000 | rrr,
+            Instruction::LoadImmediateWide { rr } => 0b0000_0000 | 0b1_0000 | (rr as u8),
+            Instruction::Jump(cond) => 0b0010_0000 | (cond as u8),
+            Instruction::Save { rrr } => 0b0010_1000 | rrr,
             Instruction::Alu(op) => {
                 let op_b: u8 = op.into();
                 0b0011_0000u8 | op_b
             }
-            Instruction::Move { aaa, bbb } => 0b0100_0000 | (aaa << 3) | bbb,
-            Instruction::Port { d, aaa } => 0b1110_0000 | (d as u8) | aaa,
-            Instruction::Comp { aaa } => 0b1111_0000 | aaa,
+            Instruction::Move { qqq, rrr } => 0b0100_0000 | (qqq << 3) | rrr,
+            Instruction::Madr { d, r } => 0b1101_1000 | (d as u8) | (r as u8),
+            Instruction::Port { d, rrr } => 0b1110_0000 | (d as u8) | rrr,
+            Instruction::Comp { rrr } => 0b1111_0000 | rrr,
             Instruction::Stck { d, r } => 0b1111_1000 | (d as u8) | (r as u8),
             Instruction::Clrf => 0b1111_1110,
             Instruction::Halt => 0b1111_1111,
@@ -373,8 +447,8 @@ impl From<bool> for InstructionMadrDirection {
 ///
 /// If the condition is met, the value of ADR is loaded into the PC.
 ///
-/// If the condition is not met, no further special action is taken; the PC would have already been incremented as part of
-/// loading the instruction.
+/// If the condition is not met, no further special action is taken;
+/// the PC would have already been incremented as part of loading the instruction.
 ///
 /// **NB:** The value of ADR must have been set with the desired target location prior to the JUMP instruction being performed.
 ///
@@ -441,7 +515,7 @@ impl From<bool> for InstructionPortDirection {
 }
 
 
-/// The D bit indicates the direction; 0 for PUSH and 1 for POP.
+/// The `D` bit indicates the direction; `0` for PUSH and `1` for POP.
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum InstructionStckDirection {
     Push = 0b00,
@@ -458,7 +532,39 @@ impl From<bool> for InstructionStckDirection {
 }
 
 
-/// The R bit indicates the register pair; 0 for A & B and 1 for C & D.
+/// When performing a wide immediate load, two bytes are read from memory into a pair of registers, as indicated by the two
+/// bits `RR`.
+///
+/// RR | Registers
+/// ---|----------
+/// 00 | A and B
+/// 01 | C and D
+/// 10 | X and Y
+/// 11 | ADR
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum InstructionLoadImmediateWideRegisterPair {
+    Ab = 0b00,
+    Cd = 0b01,
+    Xy = 0b10,
+    Adr = 0b11,
+}
+
+impl TryFrom<u8> for InstructionLoadImmediateWideRegisterPair {
+    type Error = ();
+
+    fn try_from(raw: u8) -> Result<InstructionLoadImmediateWideRegisterPair, ()> {
+        let nib = limit_to_width(raw, 2).ok_or(())?;
+        Ok(match ((nib & 0b0010) != 0, (nib & 0b0001) != 0) {
+            (false, false) => InstructionLoadImmediateWideRegisterPair::Ab,
+            (false, true) => InstructionLoadImmediateWideRegisterPair::Cd,
+            (true, false) => InstructionLoadImmediateWideRegisterPair::Xy,
+            (true, true) => InstructionLoadImmediateWideRegisterPair::Adr,
+        })
+    }
+}
+
+
+/// The `R` bit indicates the register pair; `0` for A & B and `1` for C & D.
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum InstructionRegisterPair {
     Ab = 0b0,
@@ -489,7 +595,7 @@ impl From<bool> for InstructionRegisterPair {
 ///
 /// All will set the PARITY flag if the number of high bits are even in the S register.
 ///
-/// The ADD, SUB, ADDC, and SUBC operations will set the carry bit in F to carry out value from adders.
+/// The ADD, SUB, ADDC, and SUBC operations will set the carry bit in F to carry out value from the adders.
 ///
 /// FFFF | Name | Count | Description
 /// -----|------|-------|------------
@@ -619,10 +725,10 @@ impl From<bool> for AluOperationShiftOrRotateDirection {
 }
 
 
-/// All shifts can be performed left or right, as designated by the D bit of the instruction.
+/// All shifts can be performed left or right, as designated by the `D` bit of the instruction.
 ///
-/// If D is a `1`, the shift is to the left, all bits will move to a higher value, if D is `0`, it's a right shift,
-/// moving bits to lower values.
+/// If `D` is a `1`, the shift is to the left, all bits will move to a higher value, if `D` is `0`,
+/// it's a right shift, moving bits to lower values.
 ///
 /// There are then four types of shift that can be performed designated by the final two bits of the ALU
 /// instruction.
@@ -638,7 +744,8 @@ impl From<bool> for AluOperationShiftOrRotateDirection {
 /// 10 | RTC  | Rotate with carry - the Carry flag is inserted (Carry flag value before it is updated is used)
 /// 11 | RTW  | Rotate without carry - the bit shifted out is inserted
 ///
-/// An example of a Arithmetic shift right; `AXXX XXXB` would become `AAXX XXXX`, with `B` copied to the Carry bit.
+/// An example of a Arithmetic shift right;
+/// `AXXX XXXB` would become `AAXX XXXX`, with `B` copied to the Carry bit.
 ///
 /// **NB:** An 'Arithmetic shift left' is the same as performing a 'Logical shift left', they _can_ be used interchangeably, but
 /// 'Arithmetic shift left' should be avoided.
