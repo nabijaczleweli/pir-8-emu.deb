@@ -10,6 +10,30 @@ static TOKENS_REGISTER: &[&str] = &["[register letter]"];
 
 
 #[test]
+fn load_immedate_byte() {
+    for pad_left in 1..5 {
+        for pad_right in 1..5 {
+            unrecognised_token(&format!("LOAD{e:wl$}IMM{e:wr$}BYTE", e = "", wl = pad_left, wr = pad_right),
+                               &[],
+                               2..5,
+                               |_, _| true,
+                               |len, _, _| ParseInstructionError::UnrecognisedToken(len, TOKENS_REGISTER));
+        }
+    }
+}
+
+#[test]
+fn load_indirect() {
+    for pad in 1..5 {
+        unrecognised_token(&format!("LOAD{e:w$}IND", e = "", w = pad),
+                               &[],
+                               2..5,
+                               |_, _| true,
+                               |len, _, _| ParseInstructionError::UnrecognisedToken(len, TOKENS_REGISTER));
+    }
+}
+
+#[test]
 fn save() {
     unrecognised_token("SAVE",
                        &[],
@@ -19,7 +43,7 @@ fn save() {
 }
 
 #[test]
-fn move_aaa() {
+fn move_qqq() {
     unrecognised_token("MOVE",
                        &[],
                        2..5,
@@ -28,21 +52,21 @@ fn move_aaa() {
 }
 
 #[test]
-fn move_bbb() {
+fn move_rrr() {
     for regs in &[GeneralPurposeRegister::defaults(), alt_gp_registers()] {
         for pad_left in 1..5 {
             for pad_center in 1..5 {
                 for pad_right in 1..5 {
                     for pad_rright in 1..5 {
-                        for aaa in regs {
+                        for qqq in regs {
                             for token_len in 2..5 {
                                 for _ in 0..10 {
-                                    let aaa = aaa.letter();
-                                    let bbb: String = Alphanumeric.sample_iter(thread_rng()).take(token_len).collect();
+                                    let qqq = qqq.letter();
+                                    let rrr: String = Alphanumeric.sample_iter(thread_rng()).take(token_len).collect();
 
                                     let instr = format!("{e:wl$}MOVE{e:wc$}{}{e:wr$}{}{e:wrr$}",
-                                                        aaa,
-                                                        bbb,
+                                                        qqq,
+                                                        rrr,
                                                         e = "",
                                                         wl = pad_left,
                                                         wc = pad_center,
@@ -70,19 +94,6 @@ fn comp() {
                        2..5,
                        |_, _| true,
                        |len, _, _| ParseInstructionError::UnrecognisedToken(len, TOKENS_REGISTER));
-}
-
-#[test]
-fn load() {
-    for var in &["IMM", "IND"] {
-        for pad in 1..5 {
-            unrecognised_token(&format!("LOAD{e:w$}{}", var, e = "", w = pad),
-                               &[],
-                               2..5,
-                               |_, _| true,
-                               |len, _, _| ParseInstructionError::UnrecognisedToken(len, TOKENS_REGISTER));
-        }
-    }
 }
 
 #[test]
