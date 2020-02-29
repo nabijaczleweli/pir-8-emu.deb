@@ -1,3 +1,11 @@
+pir-8-emu (2.0.0-1) unstable; urgency=medium
+
+  * Fix cleaning in d/rules
+  * New upstream version 2.0.0
+  * Rebase patches
+
+ -- nabijaczleweli <nabijaczleweli@gmail.com>  Sat, 29 Feb 2020 20:37:22 +0100
+
 pir-8-emu (1.0.0-2) unstable; urgency=medium
 
   * Fix Architecture from linux-any to any
