@@ -1,3 +1,18 @@
+commit 3a4fa40f4f716fc97a4bc432d06cf69f8cb9e0ce
+Author: thecoshman <github@thecoshman.com>
+Date:   Fri Feb 28 14:52:10 2020 +0000
+
+    Apply consistant styling through the ISA doc
+
+commit 3305c0a11797e0311e9e8037a832122160022a20
+Author: thecoshman <github@thecoshman.com>
+Date:   Fri Feb 28 12:27:33 2020 +0000
+
+    Rework how LOAD instrctions are handled
+    
+    There is now one byte and two byte immediate loads.
+    Juggled the bit patterns used to help organise things a bit better
+
 commit 5f282f5e86cfc4add8818a201092c0e75be1c4cd
 Author: thecoshman <github@thecoshman.com>
 Date:   Wed Feb 26 14:16:26 2020 +0000

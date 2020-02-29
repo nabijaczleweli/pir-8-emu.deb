@@ -1,3 +1,21 @@
+v2.0.0          Suscitating
+    
+    BREAKING:
+      * New target ISA version – 3a4fa40f4f716fc97a4bc432d06cf69f8cb9e0ce,
+        consult test-data/v1.0/README.md for the notable changes
+      * APIs broken:
+        + Renamed: Instruction::LoadImmediate -> Instruction::LoadImmediateByte
+        + New:     Instruction::LoadImmediateWide
+        + Renamed: aaa -> rrr; aaa&bbb -> qqq&rrr
+    
+    Fixed:
+      * Typo in pir-8-as manpage
+    
+    Changed:
+      * Old test-data/ now lives in test-data/v1.0/,
+        replaced with updated assemblies
+
+
 v1.0.0          Soulless
     
     BREAKING:
