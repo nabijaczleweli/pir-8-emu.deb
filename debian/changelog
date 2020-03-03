@@ -1,3 +1,9 @@
+pir-8-emu (2.0.1-1) unstable; urgency=medium
+
+  * New upstream version 2.0.1
+
+ -- nabijaczleweli <nabijaczleweli@gmail.com>  Tue, 03 Mar 2020 16:20:21 +0100
+
 pir-8-emu (2.0.0-1) unstable; urgency=medium
 
   * Fix cleaning in d/rules
