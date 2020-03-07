@@ -11,11 +11,14 @@ Tag: implemented-in::rust, role::program
 Build-Depends: debhelper,
                debhelper-compat (= 12),
                bash-completion,
+               ronn (>= 0.9.0),
+#              ^ ronn before that fails with regex+locale related errors
+               locales,
+#              ^ we need to generate some locales for ronn
+               cargo,
                libx11-dev,
                libbearlibterminal-dev,
                patchelf,
-#              ronn,  too old, broken on my machine
-#              rustc?
 
 Package: pir-8-emu
 Architecture: any

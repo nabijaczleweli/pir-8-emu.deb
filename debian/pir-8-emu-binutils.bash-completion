@@ -1,2 +1,2 @@
-completions/pir-8-as.bash      pir-8-as
-completions/pir-8-disasm.bash  pir-8-disasm
+target/completions/pir-8-as.bash      pir-8-as
+target/completions/pir-8-disasm.bash  pir-8-disasm
