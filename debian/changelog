@@ -1,3 +1,9 @@
+pir-8-emu (2.0.2-1) unstable; urgency=medium
+
+  * New upstream version 2.0.2
+
+ -- nabijaczleweli <nabijaczleweli@gmail.com>  Fri, 13 Mar 2020 18:35:06 +0100
+
 pir-8-emu (2.0.1-2) unstable; urgency=medium
 
   * Fix build defs to actually build in a clean sid chroot
