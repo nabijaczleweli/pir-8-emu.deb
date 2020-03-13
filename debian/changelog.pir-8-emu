@@ -1,3 +1,18 @@
+v2.0.2          Stinky
+    
+    Fixed:
+      * ADR instead of PC being used for instruction history
+
+
+v2.0.1          Seminar
+    
+    Fixed:
+      * Examples in pir-8-as manpage
+    
+    New:
+      * Installation instructions in README
+
+
 v2.0.0          Suscitating
     
     BREAKING:
